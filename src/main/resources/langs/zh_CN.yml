@@ -1,5 +1,6 @@
 # Nascraft zh_CN - 1.9.1
 # 由 @Rayson-Zky9x 汉化
+# 由 Earth1283 继续汉化
 
 # 小数分隔符。可用选项：点 (.)，逗号 (,)
 separator: "point"
@@ -46,14 +47,14 @@ sell_close: "<b><gradient:#ff0000:#ff3b05>关闭</gradient></b>"
 sell_button_name: "<b><gradient:#ffd857:#ff6f00>出售物品</gradient></b>"
 sell_button_lore: "<color:#85784d>预计出售价值：</color> \n[WORTH-LIST]"
 sell_remove_item: "<u><color:#ff2424>⏵ 点击从出售列表移除</color></u>"
-sell_help_title: "<b><gradient:#7f60ab:#ab3f7a>如何使用？</gradient></b>"
+sell_help_title: "<b><gradient:#7f60ab:#ab3f7a>使用指南</gradient></b>"
 sell_help_lore: "<color:#ab898d>选择你想出售的所有物品。</color>\n<color:#ab898d>预估价值仅供参考，实际成交价可能变动。</color>"
 sell_action_message: "<gradient:#FF00CD:#DA58FF>你出售了价值 <bold><light_purple>[WORTH]</light_purple></bold> 的物品</gradient>"
 sell_item_not_allowed: "<gradient:#FB6363:#C4B3FD>✘ 无效物品！</gradient>"
 sell_full: "<gradient:#FB6363:#C4B3FD>✘ 出售栏位已满！</gradient>"
 
 # 手持出售 (sellhand)
-sellhand_invalid: "<gradient:#FF0000:#FF7E7E:#FF0000>请手持有效物品！</gradient>"
+sellhand_invalid: "<gradient:#FF0000:#FF7E7E:#FF0000>请手持有效物品再执行指令！</gradient>"
 sellhand_error_hand: "<gradient:#FF0000:#FF7E7E:#FF0000>✘ 错误！确认前请勿切换手持物品</gradient>"
 sellhand_estimated_value: "<gray>预估价值：</gray> \n"
 
@@ -66,7 +67,7 @@ alert_not_recognized: "<gradient:#FB6363:#C4B3FD>物品未识别。</gradient>"
 alert_setup: "<gradient:#00E3FB:#F9ABFD>警报设置成功！当价格达到时将收到私信通知。</gradient>"
 
 # 警报列表 (alerts)
-alerts_empty: "<gradient:#FB6363:#C4B3FD>未设置任何警报。</gradient>"
+alerts_empty: "<gradient:#FB6363:#C4B3FD>您未设置任何警报。</gradient>"
 alerts_header: "&e活跃警报：\n"
 alerts_list_segment: "\n&6> &l[NAME] &r&e价格 &l[WORTH]"
 
@@ -83,7 +84,7 @@ sellwand_nothing_to_sell: "<gradient:#FB6363:#C4B3FD>✘ 没有可出售物品�
 sellwand_cooldown: "<gradient:#FB6363:#C4B3FD>冷却中，剩余时间：[TIME]</gradient>"
 sellwand_minutes: "[MINUTES] 分钟 [SECONDS] 秒"
 sellwand_seconds: "[SECONDS] 秒"
-sellwand_too_much: "<gradient:#FB6363:#C4B3FD>✘ 此魔杖无法出售如此大量的物品！</gradient>"
+sellwand_too_much: "<gradient:#FB6363:#C4B3FD>✘ 此魔杖无法出售如此大量的物品！请换一个再试试</gradient>"
 
 # 账户绑定 (LINK COMMAND)
 link_already_linked: "<gradient:#FF00CD:#DA58FF>账户已绑定！</gradient>"
