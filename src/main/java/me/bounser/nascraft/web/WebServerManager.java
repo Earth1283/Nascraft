@@ -73,6 +73,7 @@ public class WebServerManager {
 
             ConcurrentHashMap<String, Long> rateLimits = new ConcurrentHashMap<>();
             webServer.before(ctx -> {
+                if (!ctx.path().startsWith("/api/")) return;
                 String ip = ctx.req().getRemoteAddr();
                 long now = System.currentTimeMillis();
                 long lastReq = rateLimits.getOrDefault(ip, 0L);

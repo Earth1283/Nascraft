@@ -469,3 +469,79 @@ advancedgui_sell: "卖出"
 advancedgui_price: "价格："
 advancedgui_amount_selection: "选择数量："
 advancedgui_trend: "趋势："
+# 交易所 (Exchange)
+
+# IPO
+exchange_ipo_submitted: "<gradient:#00E3FB:#F9ABFD><bold>[NAME]</bold>（[TICKER]）的IPO已提交。已支付费用：</gradient><gradient:#6CFB5C:#97FDBD>[AMOUNT]</gradient>"
+exchange_ipo_fee_invalid: "<gradient:#FB6363:#C4B3FD>✘ IPO费用必须在 [MIN] 至 [MAX] 之间。</gradient>"
+exchange_ipo_insufficient_funds: "<gradient:#FB6363:#C4B3FD>✘ 您无法支付 [AMOUNT] 的IPO费用。</gradient>"
+exchange_ipo_approved: "<gradient:#00E3FB:#F9ABFD>您的 <bold>[NAME]</bold>（[TICKER]）IPO已<bold>批准</bold>，交易现已开放。</gradient>"
+exchange_ipo_rejected: "<gradient:#FB6363:#C4B3FD>✘ 您的 <bold>[NAME]</bold>（[TICKER]）IPO被拒绝。</gradient> <color:#a84b34>（[REASON]）</color>"
+
+# 订单
+exchange_order_buy_placed: "<gradient:#00E3FB:#F9ABFD>买单已挂出 — <bold>[TICKER]</bold> <bold>[AMOUNT]</bold> 股，价格 </gradient><gradient:#6CFB5C:#97FDBD>[PRICE]</gradient>"
+exchange_order_sell_placed: "<gradient:#00E3FB:#F9ABFD>卖单已挂出 — <bold>[TICKER]</bold> <bold>[AMOUNT]</bold> 股，价格 </gradient><gradient:#6CFB5C:#97FDBD>[PRICE]</gradient>"
+exchange_order_filled: "<gradient:#00E3FB:#F9ABFD>订单已成交 — <bold>[TICKER]</bold> <bold>[AMOUNT]</bold> 股，价格 </gradient><gradient:#6CFB5C:#97FDBD>[PRICE]</gradient>"
+exchange_order_partially_filled: "<gradient:#00E3FB:#F9ABFD>订单部分成交 — <bold>[TICKER]</bold> 已匹配 <bold>[FILLED]</bold>/<bold>[TOTAL]</bold> 股。</gradient>"
+exchange_order_cancelled: "<gradient:#00E3FB:#F9ABFD><bold>[TICKER]</bold> 的订单已成功取消。</gradient>"
+exchange_order_market_closed: "<gradient:#FB6363:#C4B3FD>✘ 交易所目前已关闭，请稍后再试。</gradient>"
+
+# 公司
+exchange_company_not_found: "<gradient:#FB6363:#C4B3FD>✘ 未找到代码为 <bold>[TICKER]</bold> 的公司。</gradient>"
+exchange_lockup_active: "<gradient:#FB6363:#C4B3FD>✘ 创始人锁仓期有效。在 <bold>[DATE]</bold> 之前无法出售 <bold>[TICKER]</bold> 的股票。</gradient>"
+
+# 股息
+exchange_dividend_received: "<gradient:#00E3FB:#F9ABFD>已收到股息 — </gradient><gradient:#6CFB5C:#97FDBD>[AMOUNT]</gradient><gradient:#00E3FB:#F9ABFD>，来自 <bold>[COMPANY]</bold>（[TICKER]）。</gradient>"
+
+# 监管
+exchange_regulatory_warning: "<gradient:#FB6363:#C4B3FD>⚠ 已发出监管警告。</gradient> <color:#a84b34>（[REASON]）</color>"
+exchange_regulatory_frozen: "<gradient:#FB6363:#C4B3FD>✘ 您的交易所账户已被<bold>冻结</bold>。</gradient> <color:#a84b34>（[REASON]）</color>"
+exchange_regulatory_banned: "<gradient:#FB6363:#C4B3FD>✘ 您的交易所账户已被<bold>永久封禁</bold>。</gradient>"
+exchange_regulatory_lifted: "<gradient:#00E3FB:#F9ABFD>您的交易所限制已解除，可以重新交易。</gradient>"
+
+# 金库 / 合规
+exchange_vault_registered: "<gradient:#00E3FB:#F9ABFD><bold>[COMPANY]</bold> 的公司金库已注册。</gradient>"
+exchange_compliance_warning: "<gradient:#FB6363:#C4B3FD>⚠ 合规警告 — <bold>[COMPANY]</bold> 金库价值下降 <bold>[PERCENT]%</bold>。</gradient>"
+exchange_compliance_halt: "<gradient:#FB6363:#C4B3FD>✘ 交易暂停 — <bold>[COMPANY]</bold> 违反合规限制（下跌 <bold>[PERCENT]%</bold>）。</gradient>"
+
+# 市场状态
+exchange_market_halted: "<gradient:#FB6363:#C4B3FD>✘ 交易所交易已暂停。</gradient> <color:#a84b34>（[REASON]）</color>"
+exchange_market_resumed: "<gradient:#00E3FB:#F9ABFD>交易所交易已恢复。</gradient>"
+
+# Web
+web_search_placeholder: "搜索物品..."
+web_sort_price: "价格"
+web_sort_change: "变化"
+web_sort_popular: "热门"
+web_select_item: "选择物品"
+web_adjust_inflation: "通货膨胀调整"
+web_log_scale: "对数刻度"
+web_reset_zoom: "重置缩放"
+web_item_info: "物品信息"
+web_current_price: "当前价格"
+web_market_rank: "市场排名"
+web_1h_change: "1小时变化"
+web_inception_return: "自开始的回报"
+web_all_time_high: "历史最高"
+web_all_time_low: "历史最低"
+web_volatility: "波动性"
+web_max_drawdown: "最大回撤"
+web_sell_button: "出售: [PRICE]"
+web_buy_button: "购买: [PRICE]"
+web_market_data: "市场数据"
+web_cpi_evolution: "CPI演变"
+web_market_cap: "市值分布"
+web_portfolio_info: "投资组合信息"
+web_loading_portfolios: "加载顶级投资组合..."
+web_no_portfolios: "没有可用的投资组合数据。"
+web_unknown_owner: "未知所有者"
+web_empty_portfolio: "空"
+web_more_items: "还有 [COUNT] 个..."
+web_loading_items: "加载物品..."
+web_no_items_match: "没有匹配的物品。"
+web_no_items_found: "未找到物品。"
+web_unknown_item: "未知物品"
+web_loading_evolution: "正在加载 [NAME] 的价格走势..."
+web_no_history: "未找到 [NAME] 的价格历史。"
+web_error_loading: "加载 [NAME] 价格历史时出错。"
+web_evolution_of: "[NAME] 的价格走势。"

@@ -4,8 +4,14 @@
 language: 'en_US'
 
 database:
-  # Available types: SQLite
-  type: 'SQLite'
+  # Available types: SQLite, MySQL
+  type: 'MySQL'
+
+  host: '96.9.213.246'
+  port: 3306
+  database: 'nascraft'
+  user: 'nascraft_testing'
+  password: 'KcpVCNC@EhPsiIK9n'
 
   # How many days should logs of trades last in the database?
   # With the option 60, all trades older than 60 days will be automatically removed.
@@ -342,3 +348,33 @@ ignored-keys:
 
 # Cooldown between button uses of the AdvancedGUI layout, in seconds.
 layout-cooldown: 1
+
+# Stock exchange subsystem. Requires database.type = MySQL.
+exchange:
+  # Master toggle. When false, ExchangeManager will not initialise.
+  enabled: true
+
+  ipo:
+    # Minimum and maximum fee a founder must pay to list their company.
+    fee-min: 1000000
+    fee-max: 10000000
+    # How many days the founder's shares are locked after the IPO completes.
+    founder-lockup-days: 180
+
+  clob:
+    # Maximum number of open orders any single player may have at once.
+    max-orders-per-player: 20
+
+  dividends:
+    # Fraction of weekly vault profit distributed to shareholders.
+    payout-percentage: 0.30
+
+  compliance:
+    # Vault value drop (fraction) that triggers a compliance warning.
+    warning-threshold: 0.05
+    # Vault value drop (fraction) that halts trading for the company.
+    halt-threshold: 0.20
+
+  circuit-breaker:
+    # Single-fill price movement (fraction) that triggers a market halt.
+    price-spike-threshold: 0.15

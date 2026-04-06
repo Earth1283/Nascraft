@@ -1,29 +1,80 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+:root {
+  --bg-base:        #080b12;
+  --bg-surface:     #0d1117;
+  --bg-card:        rgba(10, 14, 24, 0.75);
+  --border-subtle:  rgba(255, 255, 255, 0.06);
+  --border-active:  rgba(99, 102, 241, 0.5);
+  --accent-indigo:  #6366f1;
+  --accent-cyan:    #22d3ee;
+  --accent-green:   #10b981;
+  --accent-red:     #f43f5e;
+  --accent-orange:  #f97316;
+  --accent-blue:    #3b82f6;
+  --glow-indigo:    rgba(99, 102, 241, 0.25);
+  --glow-green:     rgba(16, 185, 129, 0.2);
+  --glow-red:       rgba(244, 63, 94, 0.2);
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
 
 body {
     font-family: 'Inter', sans-serif;
 }
 
-.custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-    background: #1f2937; 
-    border-radius: 3px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #4b5563; 
-    border-radius: 3px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #6b7280;
+/* ─── Animated Accent Bars ─────────────────────────────────────────── */
+@keyframes accent-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
-.custom-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: #4b5563 #1f2937;
+.card-accent-bar {
+  background: linear-gradient(90deg, #6366f1, #22d3ee, #818cf8, #22d3ee, #6366f1);
+  background-size: 300% 100%;
+  animation: accent-shift 7s ease infinite;
+}
+.card-accent-bar-green {
+  background: linear-gradient(90deg, #10b981, #34d399, #059669, #34d399, #10b981);
+  background-size: 300% 100%;
+  animation: accent-shift 7s ease infinite;
+}
+.card-accent-bar-orange {
+  background: linear-gradient(90deg, #f97316, #fb923c, #ea580c, #fb923c, #f97316);
+  background-size: 300% 100%;
+  animation: accent-shift 7s ease infinite;
+}
+.card-accent-bar-blue {
+  background: linear-gradient(90deg, #3b82f6, #818cf8, #2563eb, #818cf8, #3b82f6);
+  background-size: 300% 100%;
+  animation: accent-shift 7s ease infinite;
 }
 
+/* ─── Glassmorphism Cards ───────────────────────────────────────────── */
+.glass-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid var(--border-subtle);
+  transition: box-shadow 0.3s ease;
+}
+.glass-card:hover {
+  box-shadow: 0 0 0 1px var(--border-subtle), 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+#chart-section.glass-card {
+  box-shadow: 0 0 40px rgba(99, 102, 241, 0.08), 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+#chart-section.glass-card:hover {
+  box-shadow: 0 0 60px rgba(99, 102, 241, 0.16), 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* ─── Scrollbars ────────────────────────────────────────────────────── */
+.custom-scrollbar::-webkit-scrollbar { width: 5px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: #080b12; border-radius: 3px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.28); border-radius: 3px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.5); }
+.custom-scrollbar { scrollbar-width: thin; scrollbar-color: rgba(99, 102, 241, 0.3) #080b12; }
+
+/* ─── Chart Containers ──────────────────────────────────────────────── */
 .chart-container {
     position: relative;
     width: 100%;
@@ -40,28 +91,192 @@ canvas {
     height: auto;
 }
 
+/* ─── Sidebar ───────────────────────────────────────────────────────── */
+#sidebar {
+  background: linear-gradient(180deg, #0a0e1a 0%, #080b12 100%);
+  border-right: 1px solid rgba(99, 102, 241, 0.12);
+}
+#sidebar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(99, 102, 241, 0.055) 1px, transparent 1px);
+  background-size: 22px 22px;
+  pointer-events: none;
+  z-index: 0;
+}
+#sidebar > * { position: relative; z-index: 1; }
+
+/* ─── Item List ─────────────────────────────────────────────────────── */
 .item-selected {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.18), rgba(99, 102, 241, 0.04));
     border-left: 3px solid #818cf8;
     padding-left: calc(0.5rem - 3px);
+    box-shadow: inset 0 0 20px rgba(99, 102, 241, 0.06);
     transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
 }
-
 #item-list li:not(.item-selected) {
-     transition: background-color 0.2s ease-in-out;
+    transition: background-color 0.2s ease-in-out;
 }
 #item-list li:not(.item-selected):hover {
-     background-color: #1f2937;
-     cursor: pointer;
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.09), transparent);
+    cursor: pointer;
 }
 
-.trend-up { color: #34d399; }
-.trend-down { color: #f87171; }
+/* ─── Trend Colors ──────────────────────────────────────────────────── */
+.trend-up    { color: #34d399; }
+.trend-down  { color: #f87171; }
 .trend-neutral { color: #9ca3af; }
 
-#item-list img {
+#item-list img { vertical-align: middle; }
+
+/* ─── Current Price Gradient Text ──────────────────────────────────── */
+#current-price {
+  background: linear-gradient(135deg, #ffffff 0%, #c7d2fe 55%, #818cf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+
+/* ─── Stat Cards with Colored Left Accents ──────────────────────────── */
+.stat-card { position: relative; overflow: hidden; }
+.stat-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 4px; bottom: 4px;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+}
+.stat-card-green::before  { background: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.55); }
+.stat-card-red::before    { background: #f43f5e; box-shadow: 0 0 8px rgba(244, 63, 94, 0.55); }
+.stat-card-blue::before   { background: #3b82f6; box-shadow: 0 0 8px rgba(59, 130, 246, 0.55); }
+.stat-card-orange::before { background: #f97316; box-shadow: 0 0 8px rgba(249, 115, 22, 0.55); }
+
+/* ─── Buy / Sell Buttons ────────────────────────────────────────────── */
+#buy-button {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.14), rgba(5, 150, 105, 0.08));
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+#buy-button:hover {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.28), rgba(5, 150, 105, 0.18));
+  border-color: rgba(52, 211, 153, 0.6) !important;
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transform: translateY(-1px);
+}
+#sell-button {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.14), rgba(225, 29, 72, 0.08));
+  border-color: rgba(244, 63, 94, 0.35) !important;
+  box-shadow: 0 0 20px rgba(244, 63, 94, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+#sell-button:hover {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.28), rgba(225, 29, 72, 0.18));
+  border-color: rgba(248, 113, 113, 0.6) !important;
+  box-shadow: 0 0 30px rgba(244, 63, 94, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transform: translateY(-1px);
+}
+
+/* ─── Sort Buttons ──────────────────────────────────────────────────── */
+.sort-button {
+    background-color: rgba(15, 20, 35, 0.7);
+    color: #d1d5db;
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.375rem;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+}
+.sort-button:hover { background-color: rgba(30, 40, 65, 0.8); }
+.sort-button.active-sort {
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    color: #ffffff;
+    font-weight: 600;
+    border-color: rgba(129, 140, 248, 0.5);
+    box-shadow: 0 0 14px rgba(99, 102, 241, 0.35);
+}
+.sort-indicator { display: none; width: 1em; text-align: center; margin-left: 0.25rem; }
+.sort-button.active-sort .sort-indicator { display: inline-block; }
+
+/* ─── Chart Checkboxes ──────────────────────────────────────────────── */
+.chart-option-checkbox {
+    appearance: none;
+    background-color: rgba(15, 20, 35, 0.8);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    padding: 0.35rem;
+    display: inline-block;
+    position: relative;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    vertical-align: middle;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+.chart-option-checkbox:checked {
+    background-color: #6366f1;
+    border-color: #818cf8;
+}
+.chart-option-checkbox:checked::after {
+    content: '✔';
+    position: absolute;
+    color: white;
+    font-size: 0.5rem;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    line-height: 1;
+}
+.chart-option-label {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-right: 0.5rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+/* ─── Portfolio Cards ───────────────────────────────────────────────── */
+.portfolio-card {
+    min-height: 160px;
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.06);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.25s ease,
+                border-color 0.25s ease;
+    background: linear-gradient(145deg, #0d1220, #0a0e18);
+}
+.portfolio-card:hover {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(99, 102, 241, 0.15);
+}
+.portfolio-more-items {
+    font-size: 0.7rem;
+    color: #9ca3af;
+    font-style: italic;
+    margin-left: 4px;
+    display: inline-block;
     vertical-align: middle;
 }
 
+/* ─── Rank Badges ───────────────────────────────────────────────────── */
+.rank-1 {
+    border-color: rgba(250, 204, 21, 0.65);
+    box-shadow: 0 0 24px rgba(250, 204, 21, 0.22), 0 0 60px rgba(250, 204, 21, 0.07);
+}
+.rank-1:hover {
+    box-shadow: 0 12px 40px rgba(250, 204, 21, 0.25), 0 0 60px rgba(250, 204, 21, 0.12);
+}
+.rank-2 {
+    border-color: rgba(209, 213, 219, 0.4);
+    box-shadow: 0 0 16px rgba(209, 213, 219, 0.08);
+}
+.rank-3 {
+    border-color: rgba(251, 146, 60, 0.5);
+    box-shadow: 0 0 18px rgba(251, 146, 60, 0.14);
+}
+
+/* ─── Footer Logo ───────────────────────────────────────────────────── */
 .footer-logo {
     height: 0.75rem;
     width: 0.75rem;
@@ -70,6 +285,78 @@ canvas {
     vertical-align: baseline;
 }
 
+/* ─── Treemap ───────────────────────────────────────────────────────── */
+#treemap-container { width: 100%; height: 100%; }
+#treemap-container svg { display: block; width: 100%; height: 100%; }
+#treemap-tooltip {
+    position: absolute;
+    display: none;
+    background-color: rgba(8, 11, 18, 0.92);
+    color: white;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    pointer-events: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    white-space: nowrap;
+    z-index: 30;
+}
+
+/* ─── Help Tooltips ─────────────────────────────────────────────────── */
+.help-tooltip {
+    position: absolute;
+    display: none;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 0.25rem;
+    width: max-content;
+    max-width: 200px;
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    color: #ffffff;
+    background-color: #0d1117;
+    border-radius: 0.375rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    z-index: 40;
+    text-align: center;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+}
+.group:hover .help-tooltip { display: block; }
+
+/* ─── Flash Animations ──────────────────────────────────────────────── */
+@keyframes flash-green-bg {
+  0%, 100% { background-color: rgba(52, 211, 153, 0); opacity: 0; }
+  50% { background-color: rgba(52, 211, 153, 0.5); opacity: 1; }
+}
+@keyframes flash-red-bg {
+  0%, 100% { background-color: rgba(248, 113, 113, 0); opacity: 0; }
+  50% { background-color: rgba(248, 113, 113, 0.5); opacity: 1; }
+}
+.update-flash {
+    position: absolute;
+    inset: -2px -4px;
+    border-radius: 0.375rem;
+    z-index: -1;
+    pointer-events: none;
+}
+.flash-up {
+    animation: flash-green-bg 0.7s ease-out forwards;
+}
+.flash-down {
+    animation: flash-red-bg 0.7s ease-out forwards;
+}
+
+/* ─── Fire Icon ─────────────────────────────────────────────────────── */
+.fire-icon {
+    display: inline-block;
+    vertical-align: middle;
+    width: 18px;
+    height: 18px;
+}
+
+/* ─── Global Button Transitions ─────────────────────────────────────── */
 button {
-     transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, transform 0.15s ease-in-out;
+    transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out,
+                transform 0.15s ease-in-out, box-shadow 0.2s ease-in-out;
 }

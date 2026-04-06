@@ -19,6 +19,8 @@ public class Statistics {
 
     public static void saveCPI(Connection connection, float value) {
 
+        if (Float.isNaN(value) || Float.isInfinite(value)) return;
+
         try {
 
             String sql = "SELECT day FROM cpi;";

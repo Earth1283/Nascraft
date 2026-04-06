@@ -1426,4 +1426,42 @@ public class Config {
 
         return fillers;
     }
+
+    // Exchange getters
+
+    public boolean getExchangeEnabled() {
+        return config.getBoolean("exchange.enabled", true);
+    }
+
+    public double getExchangeIpoFeeMin() {
+        return config.getDouble("exchange.ipo.fee-min", 1_000_000);
+    }
+
+    public double getExchangeIpoFeeMax() {
+        return config.getDouble("exchange.ipo.fee-max", 10_000_000);
+    }
+
+    public int getExchangeFounderLockupDays() {
+        return config.getInt("exchange.ipo.founder-lockup-days", 180);
+    }
+
+    public int getExchangeMaxOrdersPerPlayer() {
+        return config.getInt("exchange.clob.max-orders-per-player", 20);
+    }
+
+    public double getExchangeDividendPayoutPercentage() {
+        return config.getDouble("exchange.dividends.payout-percentage", 0.30);
+    }
+
+    public double getExchangeComplianceWarningThreshold() {
+        return config.getDouble("exchange.compliance.warning-threshold", 0.05);
+    }
+
+    public double getExchangeComplianceHaltThreshold() {
+        return config.getDouble("exchange.compliance.halt-threshold", 0.20);
+    }
+
+    public double getExchangePriceSpikeThreshold() {
+        return config.getDouble("exchange.circuit-breaker.price-spike-threshold", 0.15);
+    }
 }

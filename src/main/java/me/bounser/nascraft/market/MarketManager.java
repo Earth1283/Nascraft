@@ -347,13 +347,17 @@ public class MarketManager {
         for (Item item : getAllParentItems()) {
             if (!item.getCurrency().equals(CurrenciesManager.getInstance().getDefaultCurrency())) continue;
 
-            if (Config.getInstance().includeInCPI(item)) {
+            if (Config.getInstance().includeInCPI(item) && item.getPrice().getInitialValue() > 0) {
                 index += (float) (item.getPrice().getValue()/item.getPrice().getInitialValue());
                 numOfItems++;
             }
         }
 
-        return (index/numOfItems)*100;
+        if (numOfItems == 0) return 100;
+
+        float result = (index/numOfItems)*100;
+
+        return Float.isNaN(result) || Float.isInfinite(result) ? 100 : result;
     }
 
     public List<ItemDTO> getAllItemData() {

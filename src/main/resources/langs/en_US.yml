@@ -517,3 +517,41 @@ advancedgui_sell: "Sell"
 advancedgui_price: "Price:"
 advancedgui_amount_selection: "Select amount:"
 advancedgui_trend: "Trend:"
+# Exchange
+
+# IPO
+exchange_ipo_submitted: "<gradient:#00E3FB:#F9ABFD>IPO submitted for <bold>[NAME]</bold> ([TICKER]). Fee paid: </gradient><gradient:#6CFB5C:#97FDBD>[AMOUNT]</gradient>"
+exchange_ipo_fee_invalid: "<gradient:#FB6363:#C4B3FD>✘ IPO fee must be between [MIN] and [MAX].</gradient>"
+exchange_ipo_insufficient_funds: "<gradient:#FB6363:#C4B3FD>✘ You cannot afford the IPO fee of [AMOUNT].</gradient>"
+exchange_ipo_approved: "<gradient:#00E3FB:#F9ABFD>Your IPO for <bold>[NAME]</bold> ([TICKER]) has been <bold>approved</bold>. Trading is now open.</gradient>"
+exchange_ipo_rejected: "<gradient:#FB6363:#C4B3FD>✘ Your IPO for <bold>[NAME]</bold> ([TICKER]) was rejected.</gradient> <color:#a84b34>([REASON])</color>"
+
+# Orders
+exchange_order_buy_placed: "<gradient:#00E3FB:#F9ABFD>Buy order placed — <bold>[AMOUNT]</bold> shares of <bold>[TICKER]</bold> at </gradient><gradient:#6CFB5C:#97FDBD>[PRICE]</gradient>"
+exchange_order_sell_placed: "<gradient:#00E3FB:#F9ABFD>Sell order placed — <bold>[AMOUNT]</bold> shares of <bold>[TICKER]</bold> at </gradient><gradient:#6CFB5C:#97FDBD>[PRICE]</gradient>"
+exchange_order_filled: "<gradient:#00E3FB:#F9ABFD>Order filled — <bold>[AMOUNT]</bold> shares of <bold>[TICKER]</bold> at </gradient><gradient:#6CFB5C:#97FDBD>[PRICE]</gradient>"
+exchange_order_partially_filled: "<gradient:#00E3FB:#F9ABFD>Order partially filled — <bold>[FILLED]</bold>/<bold>[TOTAL]</bold> shares of <bold>[TICKER]</bold> matched.</gradient>"
+exchange_order_cancelled: "<gradient:#00E3FB:#F9ABFD>Order for <bold>[TICKER]</bold> cancelled successfully.</gradient>"
+exchange_order_market_closed: "<gradient:#FB6363:#C4B3FD>✘ The exchange is currently closed. Try again later.</gradient>"
+
+# Company
+exchange_company_not_found: "<gradient:#FB6363:#C4B3FD>✘ No company found with ticker <bold>[TICKER]</bold>.</gradient>"
+exchange_lockup_active: "<gradient:#FB6363:#C4B3FD>✘ Founder lockup is active. You may not sell shares of <bold>[TICKER]</bold> until <bold>[DATE]</bold>.</gradient>"
+
+# Dividends
+exchange_dividend_received: "<gradient:#00E3FB:#F9ABFD>Dividend received — </gradient><gradient:#6CFB5C:#97FDBD>[AMOUNT]</gradient><gradient:#00E3FB:#F9ABFD> from <bold>[COMPANY]</bold> ([TICKER]).</gradient>"
+
+# Regulatory
+exchange_regulatory_warning: "<gradient:#FB6363:#C4B3FD>⚠ Regulatory warning issued.</gradient> <color:#a84b34>([REASON])</color>"
+exchange_regulatory_frozen: "<gradient:#FB6363:#C4B3FD>✘ Your exchange account has been <bold>frozen</bold>.</gradient> <color:#a84b34>([REASON])</color>"
+exchange_regulatory_banned: "<gradient:#FB6363:#C4B3FD>✘ Your exchange account has been <bold>permanently banned</bold>.</gradient>"
+exchange_regulatory_lifted: "<gradient:#00E3FB:#F9ABFD>Your exchange restriction has been lifted. You may trade again.</gradient>"
+
+# Vault / Compliance
+exchange_vault_registered: "<gradient:#00E3FB:#F9ABFD>Company vault registered for <bold>[COMPANY]</bold>.</gradient>"
+exchange_compliance_warning: "<gradient:#FB6363:#C4B3FD>⚠ Compliance warning — <bold>[COMPANY]</bold> vault value dropped <bold>[PERCENT]%</bold>.</gradient>"
+exchange_compliance_halt: "<gradient:#FB6363:#C4B3FD>✘ Trading halted — <bold>[COMPANY]</bold> breached the compliance limit (<bold>[PERCENT]%</bold> drop).</gradient>"
+
+# Market state
+exchange_market_halted: "<gradient:#FB6363:#C4B3FD>✘ Exchange market halted.</gradient> <color:#a84b34>([REASON])</color>"
+exchange_market_resumed: "<gradient:#00E3FB:#F9ABFD>Exchange market has resumed. Trading is now open.</gradient>"

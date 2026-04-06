@@ -479,3 +479,79 @@ advancedgui_sell: "Vender"
 advancedgui_price: "Precio:"
 advancedgui_amount_selection: "Selecciona cantidad:"
 advancedgui_trend: "Popular"
+# Bolsa (Exchange)
+
+# IPO
+exchange_ipo_submitted: "<gradient:#00E3FB:#F9ABFD>IPO enviada para <bold>[NAME]</bold> ([TICKER]). Tarifa pagada: </gradient><gradient:#6CFB5C:#97FDBD>[AMOUNT]</gradient>"
+exchange_ipo_fee_invalid: "<gradient:#FB6363:#C4B3FD>✘ La tarifa de IPO debe estar entre [MIN] y [MAX].</gradient>"
+exchange_ipo_insufficient_funds: "<gradient:#FB6363:#C4B3FD>✘ No puedes pagar la tarifa de IPO de [AMOUNT].</gradient>"
+exchange_ipo_approved: "<gradient:#00E3FB:#F9ABFD>Tu IPO para <bold>[NAME]</bold> ([TICKER]) ha sido <bold>aprobada</bold>. La negociación está abierta.</gradient>"
+exchange_ipo_rejected: "<gradient:#FB6363:#C4B3FD>✘ Tu IPO para <bold>[NAME]</bold> ([TICKER]) fue rechazada.</gradient> <color:#a84b34>([REASON])</color>"
+
+# Órdenes
+exchange_order_buy_placed: "<gradient:#00E3FB:#F9ABFD>Orden de compra colocada — <bold>[AMOUNT]</bold> acciones de <bold>[TICKER]</bold> a </gradient><gradient:#6CFB5C:#97FDBD>[PRICE]</gradient>"
+exchange_order_sell_placed: "<gradient:#00E3FB:#F9ABFD>Orden de venta colocada — <bold>[AMOUNT]</bold> acciones de <bold>[TICKER]</bold> a </gradient><gradient:#6CFB5C:#97FDBD>[PRICE]</gradient>"
+exchange_order_filled: "<gradient:#00E3FB:#F9ABFD>Orden ejecutada — <bold>[AMOUNT]</bold> acciones de <bold>[TICKER]</bold> a </gradient><gradient:#6CFB5C:#97FDBD>[PRICE]</gradient>"
+exchange_order_partially_filled: "<gradient:#00E3FB:#F9ABFD>Orden parcialmente ejecutada — <bold>[FILLED]</bold>/<bold>[TOTAL]</bold> acciones de <bold>[TICKER]</bold> cruzadas.</gradient>"
+exchange_order_cancelled: "<gradient:#00E3FB:#F9ABFD>Orden para <bold>[TICKER]</bold> cancelada correctamente.</gradient>"
+exchange_order_market_closed: "<gradient:#FB6363:#C4B3FD>✘ La bolsa está cerrada en este momento. Inténtalo más tarde.</gradient>"
+
+# Empresa
+exchange_company_not_found: "<gradient:#FB6363:#C4B3FD>✘ No se encontró ninguna empresa con el ticker <bold>[TICKER]</bold>.</gradient>"
+exchange_lockup_active: "<gradient:#FB6363:#C4B3FD>✘ Período de bloqueo del fundador activo. No puedes vender acciones de <bold>[TICKER]</bold> hasta <bold>[DATE]</bold>.</gradient>"
+
+# Dividendos
+exchange_dividend_received: "<gradient:#00E3FB:#F9ABFD>Dividendo recibido — </gradient><gradient:#6CFB5C:#97FDBD>[AMOUNT]</gradient><gradient:#00E3FB:#F9ABFD> de <bold>[COMPANY]</bold> ([TICKER]).</gradient>"
+
+# Regulatorio
+exchange_regulatory_warning: "<gradient:#FB6363:#C4B3FD>⚠ Aviso regulatorio emitido.</gradient> <color:#a84b34>([REASON])</color>"
+exchange_regulatory_frozen: "<gradient:#FB6363:#C4B3FD>✘ Tu cuenta de la bolsa ha sido <bold>congelada</bold>.</gradient> <color:#a84b34>([REASON])</color>"
+exchange_regulatory_banned: "<gradient:#FB6363:#C4B3FD>✘ Tu cuenta de la bolsa ha sido <bold>baneada permanentemente</bold>.</gradient>"
+exchange_regulatory_lifted: "<gradient:#00E3FB:#F9ABFD>Tu restricción en la bolsa ha sido levantada. Puedes operar de nuevo.</gradient>"
+
+# Bóveda / Cumplimiento
+exchange_vault_registered: "<gradient:#00E3FB:#F9ABFD>Bóveda de empresa registrada para <bold>[COMPANY]</bold>.</gradient>"
+exchange_compliance_warning: "<gradient:#FB6363:#C4B3FD>⚠ Aviso de cumplimiento — el valor de la bóveda de <bold>[COMPANY]</bold> cayó <bold>[PERCENT]%</bold>.</gradient>"
+exchange_compliance_halt: "<gradient:#FB6363:#C4B3FD>✘ Operaciones suspendidas — <bold>[COMPANY]</bold> superó el límite de cumplimiento (<bold>[PERCENT]%</bold> de caída).</gradient>"
+
+# Estado del mercado
+exchange_market_halted: "<gradient:#FB6363:#C4B3FD>✘ Bolsa suspendida.</gradient> <color:#a84b34>([REASON])</color>"
+exchange_market_resumed: "<gradient:#00E3FB:#F9ABFD>La bolsa ha reanudado operaciones.</gradient>"
+
+# Web
+web_search_placeholder: "Buscar artículos..."
+web_sort_price: "Precio"
+web_sort_change: "Cambio"
+web_sort_popular: "Popular"
+web_select_item: "Selecciona un artículo"
+web_adjust_inflation: "Ajustar por inflación"
+web_log_scale: "Escala logarítmica"
+web_reset_zoom: "Restablecer zoom"
+web_item_info: "Información del artículo"
+web_current_price: "Precio actual"
+web_market_rank: "Posición en el mercado"
+web_1h_change: "Cambio en 1h"
+web_inception_return: "Rentabilidad desde inicio"
+web_all_time_high: "Máximo histórico"
+web_all_time_low: "Mínimo histórico"
+web_volatility: "Volatilidad"
+web_max_drawdown: "Pérdida máxima"
+web_sell_button: "Vender: [PRICE]"
+web_buy_button: "Comprar: [PRICE]"
+web_market_data: "Datos del mercado"
+web_cpi_evolution: "Evolución del IPC"
+web_market_cap: "Distribución del valor de mercado"
+web_portfolio_info: "Información de la cartera"
+web_loading_portfolios: "Cargando las mejores carteras..."
+web_no_portfolios: "No hay datos de cartera disponibles."
+web_unknown_owner: "Propietario desconocido"
+web_empty_portfolio: "Vacía"
+web_more_items: "y [COUNT] más..."
+web_loading_items: "Cargando artículos..."
+web_no_items_match: "No hay artículos que coincidan."
+web_no_items_found: "No se encontraron artículos."
+web_unknown_item: "Artículo desconocido"
+web_loading_evolution: "Cargando evolución del precio de [NAME]..."
+web_no_history: "No se encontró historial de precios para [NAME]."
+web_error_loading: "Error al cargar el historial de precios de [NAME]."
+web_evolution_of: "Evolución de [NAME]."

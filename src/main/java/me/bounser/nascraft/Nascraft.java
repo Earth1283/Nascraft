@@ -34,6 +34,7 @@ import me.bounser.nascraft.config.Config;
 import me.bounser.nascraft.sellwand.WandListener;
 import me.bounser.nascraft.sellwand.WandsManager;
 import me.bounser.nascraft.updatechecker.UpdateChecker;
+import me.bounser.nascraft.exchange.ExchangeManager;
 import me.bounser.nascraft.web.WebServerManager;
 import me.leoko.advancedgui.AdvancedGUI;
 import me.leoko.advancedgui.manager.GuiItemManager;
@@ -117,6 +118,13 @@ public final class Nascraft extends JavaPlugin {
         ItemChartReduced.load();
 
         setupWebServer(config);
+
+        // Exchange subsystem (MySQL must be configured)
+        if (config.getDatabaseType() == me.bounser.nascraft.database.DatabaseType.MYSQL) {
+            getServer().getScheduler().runTaskAsynchronously(this, () -> {
+                ExchangeManager.getInstance().init();
+            });
+        }
     }
 
     private void setupAdvancedGUI(Config config) {
@@ -243,6 +251,8 @@ public final class Nascraft extends JavaPlugin {
             getLogger().info("Stopping web server...");
             webServerManager.stopServer();
         }
+
+        ExchangeManager.getInstance().shutdown();
     }
 
     private void setupMetrics() {

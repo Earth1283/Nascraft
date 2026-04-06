@@ -38,6 +38,7 @@ sellall: "<gradient:#FF00CD:#DA58FF>Продано <bold><light_purple>[AMOUNT]<
 sellall_error_without_item: "<gradient:#FF0000:#FF7E7E:#FF0000>✘ У вас нет [NAME] для продажи!</gradient>"
 sellall_error_wrong_material: "<gradient:#FF0000:#FF7E7E:#FF0000>✘ Неверный материал. Используйте: /sellall [материал]</gradient>"
 sellall_estimated_value: "<gray>Примерная стоимость:</gray> <green>\n[WORTH]</green>"
+sellall_total: "<gradient:#FF00CD:#DA58FF>Итого продано:</gradient> [WORTH]"
 
 # nsell
 sell_title: "           <b><gradient:#12438c:#91196f>Меню продажи</gradient></b>"
@@ -468,3 +469,79 @@ advancedgui_sell: "Продать"
 advancedgui_price: "Цена:"
 advancedgui_amount_selection: "Выберите количество:"
 advancedgui_trend: "Тренд:"
+# Биржа (Exchange)
+
+# IPO
+exchange_ipo_submitted: "<gradient:#00E3FB:#F9ABFD>IPO подана для <bold>[NAME]</bold> ([TICKER]). Сбор оплачен: </gradient><gradient:#6CFB5C:#97FDBD>[AMOUNT]</gradient>"
+exchange_ipo_fee_invalid: "<gradient:#FB6363:#C4B3FD>✘ Сбор IPO должен быть от [MIN] до [MAX].</gradient>"
+exchange_ipo_insufficient_funds: "<gradient:#FB6363:#C4B3FD>✘ Недостаточно средств для оплаты сбора IPO: [AMOUNT].</gradient>"
+exchange_ipo_approved: "<gradient:#00E3FB:#F9ABFD>Ваш IPO для <bold>[NAME]</bold> ([TICKER]) был <bold>одобрен</bold>. Торги открыты.</gradient>"
+exchange_ipo_rejected: "<gradient:#FB6363:#C4B3FD>✘ Ваш IPO для <bold>[NAME]</bold> ([TICKER]) был отклонён.</gradient> <color:#a84b34>([REASON])</color>"
+
+# Заявки (Orders)
+exchange_order_buy_placed: "<gradient:#00E3FB:#F9ABFD>Заявка на покупку размещена — <bold>[AMOUNT]</bold> акций <bold>[TICKER]</bold> по </gradient><gradient:#6CFB5C:#97FDBD>[PRICE]</gradient>"
+exchange_order_sell_placed: "<gradient:#00E3FB:#F9ABFD>Заявка на продажу размещена — <bold>[AMOUNT]</bold> акций <bold>[TICKER]</bold> по </gradient><gradient:#6CFB5C:#97FDBD>[PRICE]</gradient>"
+exchange_order_filled: "<gradient:#00E3FB:#F9ABFD>Заявка исполнена — <bold>[AMOUNT]</bold> акций <bold>[TICKER]</bold> по </gradient><gradient:#6CFB5C:#97FDBD>[PRICE]</gradient>"
+exchange_order_partially_filled: "<gradient:#00E3FB:#F9ABFD>Заявка частично исполнена — <bold>[FILLED]</bold>/<bold>[TOTAL]</bold> акций <bold>[TICKER]</bold> сопоставлено.</gradient>"
+exchange_order_cancelled: "<gradient:#00E3FB:#F9ABFD>Заявка по <bold>[TICKER]</bold> успешно отменена.</gradient>"
+exchange_order_market_closed: "<gradient:#FB6363:#C4B3FD>✘ Биржа в данный момент закрыта. Попробуйте позже.</gradient>"
+
+# Компания
+exchange_company_not_found: "<gradient:#FB6363:#C4B3FD>✘ Компания с тикером <bold>[TICKER]</bold> не найдена.</gradient>"
+exchange_lockup_active: "<gradient:#FB6363:#C4B3FD>✘ Действует период блокировки основателя. Вы не можете продавать акции <bold>[TICKER]</bold> до <bold>[DATE]</bold>.</gradient>"
+
+# Дивиденды
+exchange_dividend_received: "<gradient:#00E3FB:#F9ABFD>Получены дивиденды — </gradient><gradient:#6CFB5C:#97FDBD>[AMOUNT]</gradient><gradient:#00E3FB:#F9ABFD> от <bold>[COMPANY]</bold> ([TICKER]).</gradient>"
+
+# Регуляторные меры
+exchange_regulatory_warning: "<gradient:#FB6363:#C4B3FD>⚠ Выдано регуляторное предупреждение.</gradient> <color:#a84b34>([REASON])</color>"
+exchange_regulatory_frozen: "<gradient:#FB6363:#C4B3FD>✘ Ваш биржевой аккаунт был <bold>заморожен</bold>.</gradient> <color:#a84b34>([REASON])</color>"
+exchange_regulatory_banned: "<gradient:#FB6363:#C4B3FD>✘ Ваш биржевой аккаунт был <bold>заблокирован навсегда</bold>.</gradient>"
+exchange_regulatory_lifted: "<gradient:#00E3FB:#F9ABFD>Ваше ограничение на бирже снято. Вы можете снова торговать.</gradient>"
+
+# Хранилище / Соответствие
+exchange_vault_registered: "<gradient:#00E3FB:#F9ABFD>Хранилище компании зарегистрировано для <bold>[COMPANY]</bold>.</gradient>"
+exchange_compliance_warning: "<gradient:#FB6363:#C4B3FD>⚠ Предупреждение о соответствии — стоимость хранилища <bold>[COMPANY]</bold> упала на <bold>[PERCENT]%</bold>.</gradient>"
+exchange_compliance_halt: "<gradient:#FB6363:#C4B3FD>✘ Торги приостановлены — <bold>[COMPANY]</bold> превысил лимит соответствия (падение <bold>[PERCENT]%</bold>).</gradient>"
+
+# Состояние рынка
+exchange_market_halted: "<gradient:#FB6363:#C4B3FD>✘ Биржевые торги приостановлены.</gradient> <color:#a84b34>([REASON])</color>"
+exchange_market_resumed: "<gradient:#00E3FB:#F9ABFD>Биржевые торги возобновлены.</gradient>"
+
+# Web
+web_search_placeholder: "Поиск предметов..."
+web_sort_price: "Цена"
+web_sort_change: "Изменение"
+web_sort_popular: "Популярное"
+web_select_item: "Выберите предмет"
+web_adjust_inflation: "Корректировать на инфляцию"
+web_log_scale: "Логарифмическая шкала"
+web_reset_zoom: "Сбросить масштаб"
+web_item_info: "Информация о предмете"
+web_current_price: "Текущая цена"
+web_market_rank: "Рейтинг рынка"
+web_1h_change: "Изменение за 1ч"
+web_inception_return: "Доходность с начала"
+web_all_time_high: "Исторический максимум"
+web_all_time_low: "Исторический минимум"
+web_volatility: "Волатильность"
+web_max_drawdown: "Максимальная просадка"
+web_sell_button: "Продать: [PRICE]"
+web_buy_button: "Купить: [PRICE]"
+web_market_data: "Рыночные данные"
+web_cpi_evolution: "Эволюция ИПЦ"
+web_market_cap: "Распределение рыночной капитализации"
+web_portfolio_info: "Информация о портфеле"
+web_loading_portfolios: "Загрузка лучших портфелей..."
+web_no_portfolios: "Данные о портфеле недоступны."
+web_unknown_owner: "Неизвестный владелец"
+web_empty_portfolio: "Пусто"
+web_more_items: "и ещё [COUNT]..."
+web_loading_items: "Загрузка предметов..."
+web_no_items_match: "Предметы не найдены."
+web_no_items_found: "Предметы не найдены."
+web_unknown_item: "Неизвестный предмет"
+web_loading_evolution: "Загрузка динамики цен [NAME]..."
+web_no_history: "История цен для [NAME] не найдена."
+web_error_loading: "Ошибка загрузки истории цен для [NAME]."
+web_evolution_of: "Динамика цены [NAME]."
