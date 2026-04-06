@@ -229,102 +229,36 @@ public class MarketManager {
 
         List<Item> items = new ArrayList<>(MarketManager.getInstance().getAllParentItems());
 
-        List<Item> topGainers = new ArrayList<>();
+        items.sort((a, b) -> Float.compare(b.getPrice().getValueChangeLastHour(), a.getPrice().getValueChangeLastHour()));
 
-        for (int i = 1; i <= quantity ; i++) {
-
-            Item imax = items.get(0);
-            for (Item item : items) {
-
-                float variation = item.getPrice().getValueChangeLastHour();
-
-                if (variation != 0) {
-                    if (variation > imax.getPrice().getValueChangeLastHour()) {
-                        imax = item;
-                    }
-                }
-            }
-            items.remove(imax);
-
-            topGainers.add(imax);
-        }
-        return topGainers;
+        return new ArrayList<>(items.subList(0, Math.min(quantity, items.size())));
     }
 
     public List<Item> getTopDippers(int quantity) {
 
         List<Item> items = new ArrayList<>(MarketManager.getInstance().getAllParentItems());
 
-        List<Item> topDippers = new ArrayList<>();
+        items.sort((a, b) -> Float.compare(a.getPrice().getValueChangeLastHour(), b.getPrice().getValueChangeLastHour()));
 
-        for (int i = 1; i <= quantity ; i++) {
-
-            Item imax = items.get(0);
-            for (Item item : items) {
-
-                float variation = item.getPrice().getValueChangeLastHour();
-
-                if (variation != 0) {
-                    if (variation < imax.getPrice().getValueChangeLastHour()) {
-                        imax = item;
-                    }
-                }
-            }
-            items.remove(imax);
-
-            topDippers.add(imax);
-        }
-        return topDippers;
+        return new ArrayList<>(items.subList(0, Math.min(quantity, items.size())));
     }
 
     public List<Item> getMostMoved(int quantity) {
 
         List<Item> items = new ArrayList<>(MarketManager.getInstance().getAllParentItems());
 
-        List<Item> mostMoved = new ArrayList<>();
+        items.sort((a, b) -> Float.compare(Math.abs(b.getPrice().getValueChangeLastHour()), Math.abs(a.getPrice().getValueChangeLastHour())));
 
-        for (int i = 1; i <= quantity ; i++) {
-
-            Item imax = items.get(0);
-            for (Item item : items) {
-
-                float variation = item.getPrice().getValueChangeLastHour();
-
-                if (variation != 0) {
-                    if (Math.abs(variation) > Math.abs(imax.getPrice().getValueChangeLastHour())) {
-                        imax = item;
-                    }
-                }
-            }
-            items.remove(imax);
-
-            mostMoved.add(imax);
-        }
-        return mostMoved;
+        return new ArrayList<>(items.subList(0, Math.min(quantity, items.size())));
     }
 
     public List<Item> getMostTraded(int quantity) {
 
         List<Item> items = new ArrayList<>(MarketManager.getInstance().getAllParentItems());
 
-        List<Item> mostTraded = new ArrayList<>();
+        items.sort((a, b) -> Integer.compare(b.getOperations(), a.getOperations()));
 
-        for (int i = 1; i <= quantity ; i++) {
-
-            Item imax = items.get(0);
-            for (Item item : items) {
-
-                if (item.getOperations() >= 1) {
-                    if (item.getOperations() > imax.getOperations()) {
-                        imax = item;
-                    }
-                }
-            }
-            items.remove(imax);
-
-            mostTraded.add(imax);
-        }
-        return mostTraded;
+        return new ArrayList<>(items.subList(0, Math.min(quantity, items.size())));
     }
 
     public int getPositionByVolume(Item item) {
