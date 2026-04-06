@@ -28,12 +28,14 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class MarketManager {
 
-    private final List<Item> items = new ArrayList<>();
-    private final HashMap<String, Item> identifiers = new HashMap<>();
-    private List<Category> categories = new ArrayList<>();
+    private final List<Item> items = new CopyOnWriteArrayList<>();
+    private final ConcurrentHashMap<String, Item> identifiers = new ConcurrentHashMap<>();
+    private List<Category> categories = new CopyOnWriteArrayList<>();
 
     private boolean active = true;
 
@@ -44,7 +46,7 @@ public class MarketManager {
 
     private int operationsLastHour = 0;
 
-    private List<String> ignoredKeys = new ArrayList<>();
+    private List<String> ignoredKeys = new CopyOnWriteArrayList<>();
 
     ZoneOffset offset = ZonedDateTime.now(ZoneId.systemDefault()).getOffset();
 
@@ -124,8 +126,8 @@ public class MarketManager {
         for (Item item : items)
             if (item.getCategory() == null && item.isParent()) Nascraft.getInstance().getLogger().warning("Item: " + item.getIdentifier() + " is not assigned to any category.");
 
-        marketChanges1h = new ArrayList<>(Collections.nCopies(60, 0f));
-        marketChanges24h = new ArrayList<>(Collections.nCopies(24, 0f));
+        marketChanges1h = new CopyOnWriteArrayList<>(Collections.nCopies(60, 0f));
+        marketChanges24h = new CopyOnWriteArrayList<>(Collections.nCopies(24, 0f));
 
         TasksManager.getInstance();
         GraphManager.getInstance();
@@ -271,12 +273,7 @@ public class MarketManager {
     }
 
     public int getIndexOf(Item item, List<Item> list) {
-        for (int i = 0; i < list.size(); i++) {
-            if (list.get(i) == item) {
-                return i;
-            }
-        }
-        return -1;
+        return list.indexOf(item);
     }
 
     public void updateMarketChange1h(float change) {
@@ -613,6 +610,16 @@ public class MarketManager {
                 debt.getNextPayment(uuid),
                 debt.getLifeTimeInterests(uuid),
                 debt.getMaximumLoan(uuid),
+                Config.getInstance().getLoansDailyInterest(),
+                Config.getInstance().getLoansMinimumInterest(),
+                debt.getNextPaymentTime().toString()
+        );
+
+        return debtDTO;
+    }
+
+}
+etMaximumLoan(uuid),
                 Config.getInstance().getLoansDailyInterest(),
                 Config.getInstance().getLoansMinimumInterest(),
                 debt.getNextPaymentTime().toString()

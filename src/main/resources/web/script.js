@@ -42,9 +42,71 @@ document.addEventListener('DOMContentLoaded', () => {
     let operationsSortState = 0;
     let pollingIntervalId = null;
 
+    let translations = {};
+    let decimalSeparator = '.';
 
     const API_BASE_URL = '/api';
     const POLLING_INTERVAL = 3000;
+
+    async function loadTranslations() {
+        try {
+            const langData = await fetchData('/lang');
+            if (langData && langData.strings) {
+                translations = langData.strings;
+                decimalSeparator = langData.separator === 'comma' ? ',' : '.';
+                applyTranslations();
+            }
+        } catch (error) {
+            console.error("Failed to load translations:", error);
+        }
+    }
+
+    function t(key, defaultValue, placeholders = {}) {
+        let text = translations[key] || defaultValue;
+        for (const [pKey, pValue] of Object.entries(placeholders)) {
+            text = text.replace(`[${pKey}]`, pValue);
+        }
+        return text;
+    }
+
+    function applyTranslations() {
+        const setT = (id, key, def, placeholders = {}) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = t(key, def, placeholders);
+        };
+
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) searchInput.placeholder = t('web_search_placeholder', 'Search Items...');
+
+        setT('label-sort-price', 'web_sort_price', 'Price');
+        setT('label-sort-change', 'web_sort_change', 'Change');
+        setT('label-sort-popular', 'web_sort_popular', 'Popular');
+        setT('label-loading-items', 'web_loading_items', 'Loading items...');
+        setT('label-adjust-inflation', 'web_adjust_inflation', 'Adjust for Inflation');
+        setT('tooltip-inflation', 'web_tooltip_inflation', 'Adjusts prices based on the Consumer Price Index (CPI) to show real value over time.');
+        setT('label-log-scale', 'web_log_scale', 'Log Scale');
+        setT('tooltip-log-scale', 'web_tooltip_log_scale', 'Displays price axis on a logarithmic scale, useful for large price changes.');
+        setT('reset-zoom-button', 'web_reset_zoom', 'Reset Zoom');
+        setT('label-item-info', 'web_item_info', 'Item Information');
+        setT('label-current-price-title', 'web_current_price', 'Current Price');
+        setT('label-market-rank-title', 'web_market_rank', 'Market Rank');
+        setT('label-1h-change-title', 'web_1h_change', '1h Change');
+        setT('label-inception-return-title', 'web_inception_return', 'Return Since Inception');
+        setT('label-all-time-high-title', 'web_all_time_high', 'All-Time High');
+        setT('label-all-time-low-title', 'web_all_time_low', 'All-Time Low');
+        setT('label-volatility-title', 'web_volatility', 'Volatility');
+        setT('label-max-drawdown-title', 'web_max_drawdown', 'Max Drawdown');
+        setT('label-market-data', 'web_market_data', 'Market Data');
+        setT('label-cpi-evolution', 'web_cpi_evolution', 'CPI Evolution');
+        setT('label-market-cap', 'web_market_cap', 'Market Cap Distribution');
+        setT('label-portfolio-info', 'web_portfolio_info', 'Portfolio Info');
+        setT('label-loading-portfolios', 'web_loading_portfolios', 'Loading top portfolios...');
+
+        if (!selectedItemIdentifier) {
+            selectedItemNameElement.textContent = t('web_select_item', 'Select an Item');
+            selectedItemDescElement.textContent = t('web_select_item_desc', 'Select an item to see its price evolution.');
+        }
+    }
 
     const defaultChartJsOptions = {
         maintainAspectRatio: false, responsive: true,
@@ -78,7 +140,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (value === null || value === undefined || isNaN(value)) {
             return defaultVal;
         }
-        return '$' + value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        let formatted = value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (decimalSeparator === ',') {
+            formatted = formatted.replace('.', 'X').replace(',', '.').replace('X', ',');
+        }
+        return '$' + formatted;
     }
 
     function calculateVolatility(prices) {
@@ -153,7 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
             hasContent = true;
             itemsToRender.forEach(item => {
                 const itemIdentifier = item?.identifier;
-                const itemName = item?.name || 'Unknown Item';
+                const itemName = item?.name || t('web_unknown_item', 'Unknown Item');
                 const itemPrice = item?.price;
                 const itemChangePercent = item?.changePercent;
 
@@ -204,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
              itemListElement.appendChild(fragment);
         } else {
              const searchTerm = searchInputElement.value;
-             itemListElement.innerHTML = `<li class="p-2 text-gray-400">${searchTerm ? 'No items match search.' : 'No items found.'}</li>`;
+             itemListElement.innerHTML = `<li class="p-2 text-gray-400">${searchTerm ? t('web_no_items_match', 'No items match search.') : t('web_no_items_found', 'No items found.')}</li>`;
         }
     }
 
@@ -228,8 +294,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (selectedItem) {
             selectedItemIconElement.src = `${API_BASE_URL}/icons/${selectedItem.identifier}.png`;
             selectedItemIconElement.onerror = () => { selectedItemIconElement.src='https://placehold.co/32x32/374151/9ca3af?text=?'; selectedItemIconElement.onerror=null; };
-            selectedItemNameElement.textContent = selectedItem.name || 'Unknown Item';
-            selectedItemDescElement.textContent = `Loading price evolution for ${selectedItem.name}...`;
+            selectedItemNameElement.textContent = selectedItem.name || t('web_unknown_item', 'Unknown Item');
+            selectedItemDescElement.textContent = t('web_loading_evolution', `Loading price evolution for ${selectedItem.name}...`, { name: selectedItem.name });
 
             const sortedByPrice = [...allItems]
                 .filter(item => item && item.price !== null && item.price !== undefined && !isNaN(item.price))
@@ -262,13 +328,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 } else {
                     updateSelectedItemDetails(selectedItem, calculatedRank, null, null, null, null, null);
-                    selectedItemDescElement.textContent = `No price history found for ${selectedItem.name}.`;
+                    selectedItemDescElement.textContent = t('web_no_history', `No price history found for ${selectedItem.name}.`, { name: selectedItem.name });
                     clearLightweightChart();
                 }
             } catch (error) {
                 console.error(`Failed to fetch or update chart for ${identifier}:`, error);
                 updateSelectedItemDetails(selectedItem, calculatedRank, null, null, null, null, null);
-                selectedItemDescElement.textContent = `Error loading price history for ${selectedItem.name}.`;
+                selectedItemDescElement.textContent = t('web_error_loading', `Error loading price history for ${selectedItem.name}.`, { name: selectedItem.name });
                 clearLightweightChart();
             } finally {
                  if (chartSpinner) chartSpinner.classList.add('hidden');
@@ -288,7 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (item) {
             const itemIdentifierStr = String(item?.identifier);
-            const itemName = item?.name || 'Unknown Item';
+            const itemName = item?.name || t('web_unknown_item', 'Unknown Item');
             const itemChangePercent = item?.changePercent;
             const itemPrice = item?.price;
 
@@ -297,9 +363,9 @@ document.addEventListener('DOMContentLoaded', () => {
             selectedItemNameElement.textContent = itemName;
 
              if (!selectedItemDescElement.textContent?.startsWith('Loading')) {
-                 selectedItemDescElement.textContent = item?.description || `Evolution of ${itemName}.`;
+                 selectedItemDescElement.textContent = item?.description || t('web_evolution_of', `Evolution of ${itemName}.`, { name: itemName });
              } else if (ath !== null || atl !== null) {
-                 selectedItemDescElement.textContent = item?.description || `Evolution of ${itemName}.`;
+                 selectedItemDescElement.textContent = item?.description || t('web_evolution_of', `Evolution of ${itemName}.`, { name: itemName });
              }
 
 
@@ -330,10 +396,15 @@ document.addEventListener('DOMContentLoaded', () => {
             sellPriceDisplayElement.textContent = formatCurrency(item?.sell, '-');
             buyPriceDisplayElement.textContent = formatCurrency(item?.buy, '-');
 
+            const sellLabel = document.getElementById('label-sell-button');
+            if(sellLabel) sellLabel.innerHTML = t('web_sell_button', 'Sell: [PRICE]', { price: `<span id="sell-price-display">${formatCurrency(item?.sell, '-')}</span>` });
+            const buyLabel = document.getElementById('label-buy-button');
+            if(buyLabel) buyLabel.innerHTML = t('web_buy_button', 'Buy: [PRICE]', { price: `<span id="buy-price-display">${formatCurrency(item?.buy, '-')}</span>` });
+
         } else {
             selectedItemIconElement.src = 'https://placehold.co/32x32/374151/9ca3af?text=?';
-            selectedItemNameElement.textContent = 'Select an Item';
-            selectedItemDescElement.textContent = 'Select an item to see its price evolution.';
+            selectedItemNameElement.textContent = t('web_select_item', 'Select an Item');
+            selectedItemDescElement.textContent = t('web_select_item_desc', 'Select an item to see its price evolution.');
             currentPriceElement.textContent = '-';
             marketRankElement.textContent = '-';
             change1hElement.textContent = '-'; change1hElement.className = 'text-lg font-semibold';
@@ -878,14 +949,14 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
         const missingElement = requiredElementIds.find(id => !document.getElementById(id));
         if (missingElement) {
-             console.error(`Critical UI element missing: #${missingElement}. Aborting initialization.`);
-             document.body.innerHTML = '<div class="p-4 text-red-500">Error: UI elements missing. Cannot initialize application.</div>';
-             return;
-         }
+            console.error(`Critical UI element missing: #${missingElement}. Aborting initialization.`);
+            document.body.innerHTML = '<div class="p-4 text-red-500">Error: UI elements missing. Cannot initialize application.</div>';
+            return;
+        }
         initializeLightweightChart();
+        await loadTranslations();
 
-        try {
-            const [itemsData, fetchedCpiData, popularItemData, topPortfoliosData] = await Promise.all([
+        try {            const [itemsData, fetchedCpiData, popularItemData, topPortfoliosData] = await Promise.all([
                 fetchData('/items').catch(e => { console.error("Failed to load items", e); return []; }),
                 fetchData('/charts/cpi').catch(e => { console.error("Failed to load CPI data", e); return []; }),
                 fetchData('/popular-item').catch(e => { console.error("Failed to load popular item", e); return null; }),
@@ -953,7 +1024,7 @@ document.addEventListener('DOMContentLoaded', () => {
          topPortfoliosContainer.innerHTML = '';
 
         if (!Array.isArray(portfolioData) || portfolioData.length === 0) {
-            topPortfoliosContainer.innerHTML = '<p class="text-gray-400 text-center">No portfolio data available.</p>';
+            topPortfoliosContainer.innerHTML = `<p class="text-gray-400 text-center">${t('web_no_portfolios', 'No portfolio data available.')}</p>`;
             return;
         }
 
@@ -971,7 +1042,7 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (index === 1) card.classList.add('rank-2');
             else if (index === 2) card.classList.add('rank-3');
 
-            const ownerName = portfolio.ownerName || 'Unknown Owner';
+            const ownerName = portfolio.ownerName || t('web_unknown_owner', 'Unknown Owner');
             const value = portfolio.value;
             const items = Object.entries(portfolio.content || {});
             items.sort(([, qtyA], [, qtyB]) => qtyB - qtyA);
@@ -987,7 +1058,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>`;
             });
             if (remainingCount > 0) {
-                 itemsHTML += `<span class="portfolio-more-items"> and ${remainingCount} more...</span>`;
+                 itemsHTML += `<span class="portfolio-more-items">${t('web_more_items', `and ${remainingCount} more...`, { count: remainingCount })}</span>`;
             }
 
             card.innerHTML = `
@@ -1000,7 +1071,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  </div>
                  <div class="text-lg font-bold text-white mb-2">${formatCurrency(value)}</div>
                  <div class="flex flex-wrap justify-center gap-1 mt-auto pt-2 border-t border-gray-600 w-full min-h-[30px]">
-                     ${itemsHTML || '<span class="text-xs text-gray-500">Empty</span>'}
+                     ${itemsHTML || `<span class="text-xs text-gray-500">${t('web_empty_portfolio', 'Empty')}</span>`}
                  </div>
             `;
             cardContainer.appendChild(card);

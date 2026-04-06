@@ -101,6 +101,25 @@ public final class Nascraft extends JavaPlugin {
 
         setupPermissions();
 
+        setupAdvancedGUI(config);
+        setupPlaceholderAPI();
+        setupDiscordExtension(config);
+        setupSellWands(config);
+        setupLoans(config);
+
+        createImagesFolder();
+
+        MarketManager.getInstance();
+
+        setupCommandsAndListeners(config);
+
+        Bukkit.getPluginManager().registerEvents(new EventsManager(), this);
+        ItemChartReduced.load();
+
+        setupWebServer(config);
+    }
+
+    private void setupAdvancedGUI(Config config) {
         Plugin AGUI = Bukkit.getPluginManager().getPlugin("AdvancedGUI");
 
         if (AGUI == null || !AGUI.isEnabled()) {
@@ -112,12 +131,16 @@ public final class Nascraft extends JavaPlugin {
             if (!Bukkit.getPluginManager().getPlugin("AdvancedGUI").getDescription().getVersion().equals(AGUI_VERSION))
                 getLogger().warning("This plugin was made using AdvancedGUI " + AGUI_VERSION + "! You may encounter errors on other versions");
         }
+    }
 
+    private void setupPlaceholderAPI() {
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             getLogger().info("PlaceholderAPI detected!");
             new PAPIExpansion().register();
         }
+    }
 
+    private void setupDiscordExtension(Config config) {
         if (config.getDiscordEnabled()) {
             getLogger().info("Enabling discord extension...");
 
@@ -132,21 +155,23 @@ public final class Nascraft extends JavaPlugin {
             new DiscordBot();
             getLogger().info("Discord extension loaded!");
         }
+    }
 
+    private void setupSellWands(Config config) {
         if (config.getSellWandsEnabled()) {
             if (config.isCommandEnabled("givesellwand")) new GiveSellWandCommand();
             Bukkit.getPluginManager().registerEvents(new WandListener(), this);
             WandsManager.getInstance();
         }
+    }
 
+    private void setupLoans(Config config) {
         if (config.getLoansEnabled()) {
             DebtManager.getInstance();
         }
+    }
 
-        createImagesFolder();
-
-        MarketManager.getInstance();
-
+    private void setupCommandsAndListeners(Config config) {
         if (config.isCommandEnabled("nascraft")) {
             new NascraftCommand();
 
@@ -175,10 +200,9 @@ public final class Nascraft extends JavaPlugin {
             new PortfolioCommand();
             Bukkit.getPluginManager().registerEvents(new PortfolioInventory(), this);
         }
+    }
 
-        Bukkit.getPluginManager().registerEvents(new EventsManager(), this);
-        ItemChartReduced.load();
-
+    private void setupWebServer(Config config) {
         if (config.getWebEnabled()) {
 
             if (config.isCommandEnabled("web")) {

@@ -62,6 +62,20 @@ public class Lang {
         Formatter.setSeparator(Separator.valueOf(message(Message.SEPARATOR).toUpperCase()));
     }
 
+    public java.util.Map<String, String> getWebStrings() {
+        java.util.Map<String, String> webStrings = new java.util.HashMap<>();
+        for (String key : lang.getKeys(false)) {
+            if (key.startsWith("web_")) {
+                webStrings.put(key, lang.getString(key));
+            }
+        }
+        return webStrings;
+    }
+
+    public String getSeparator() {
+        return lang.getString("separator", "point");
+    }
+
     private void saveResourceIfNotExists(String resourcePath) {
         File resourceFile = new File(Nascraft.getInstance().getDataFolder().getPath() + "/" + resourcePath);
         if (!resourceFile.exists()) Nascraft.getInstance().saveResource(resourcePath, false);

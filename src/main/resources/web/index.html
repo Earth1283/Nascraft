@@ -234,19 +234,19 @@
         <div class="mb-2 text-xs text-gray-400">Sort by:</div>
         <div id="sort-controls" class="flex flex-wrap gap-2 mb-3 text-xs">
              <button class="sort-button" data-sort-category="price">
-                 Price <span class="sort-indicator"></span>
+                 <span id="label-sort-price">Price</span> <span class="sort-indicator"></span>
              </button>
              <button class="sort-button" data-sort-category="change">
-                 Change <span class="sort-indicator"></span>
+                 <span id="label-sort-change">Change</span> <span class="sort-indicator"></span>
              </button>
              <button class="sort-button" data-sort-category="operations">
-                 Popular <span class="sort-indicator"></span>
+                 <span id="label-sort-popular">Popular</span> <span class="sort-indicator"></span>
              </button>
         </div>
 
         <nav class="flex-1 overflow-y-auto custom-scrollbar -mr-1 pr-1 h-40 sm:h-auto">
             <ul id="item-list" class="space-y-1">
-                <li class="p-2 text-gray-400">Loading items...</li>
+                <li class="p-2 text-gray-400" id="label-loading-items">Loading items...</li>
             </ul>
         </nav>
         <div class="mt-4 pt-4 border-t border-gray-700/50 text-xs text-gray-500">
@@ -271,25 +271,25 @@
                      </div>
                      <div class="flex flex-col items-start sm:items-end space-y-1 flex-shrink-0 mt-2 sm:mt-0 sm:ml-4">
                          <div class="flex items-center justify-start sm:justify-end">
-                              <label for="inflation-adjust-checkbox" class="chart-option-label">Adjust for Inflation</label>
+                              <label for="inflation-adjust-checkbox" class="chart-option-label" id="label-adjust-inflation">Adjust for Inflation</label>
                               <input type="checkbox" id="inflation-adjust-checkbox" class="chart-option-checkbox">
                               <div class="relative flex items-center group ml-1">
                                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 text-gray-500 hover:text-gray-300 cursor-help">
                                       <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
                                   </svg>
-                                  <span class="help-tooltip group-hover:block">
+                                  <span class="help-tooltip group-hover:block" id="tooltip-inflation">
                                       Adjusts prices based on the Consumer Price Index (CPI) to show real value over time.
                                   </span>
                               </div>
                          </div>
                          <div class="flex items-center justify-start sm:justify-end">
-                               <label for="log-scale-checkbox" class="chart-option-label">Log Scale</label>
+                               <label for="log-scale-checkbox" class="chart-option-label" id="label-log-scale">Log Scale</label>
                                <input type="checkbox" id="log-scale-checkbox" class="chart-option-checkbox">
                                <div class="relative flex items-center group ml-1">
                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 text-gray-500 hover:text-gray-300 cursor-help">
                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
                                    </svg>
-                                   <span class="help-tooltip group-hover:block">
+                                   <span class="help-tooltip group-hover:block" id="tooltip-log-scale">
                                        Displays price axis on a logarithmic scale, useful for large price changes.
                                    </span>
                                </div>
@@ -308,56 +308,56 @@
             </section>
 
             <section class="lg:col-span-1 bg-gradient-to-br from-gray-700 to-gray-800 p-4 rounded-lg shadow-xl flex flex-col">
-                <h3 class="text-xl font-semibold text-white text-center">Item Information</h3>
+                <h3 class="text-xl font-semibold text-white text-center" id="label-item-info">Item Information</h3>
                 <div class="h-px bg-gradient-to-r from-transparent via-indigo-400 to-transparent my-3"></div>
 
                 <div id="item-details" class="text-center space-y-2 py-2 flex-grow">
                     <div class="relative">
-                        <span class="text-sm text-gray-400 uppercase tracking-wider">Current Price</span>
+                        <span class="text-sm text-gray-400 uppercase tracking-wider" id="label-current-price-title">Current Price</span>
                         <p class="text-xl lg:text-2xl font-bold text-white" id="current-price">$0.00</p>
                     </div>
                     <div>
-                        <span class="text-sm text-gray-400 uppercase tracking-wider">Market Rank</span>
+                        <span class="text-sm text-gray-400 uppercase tracking-wider" id="label-market-rank-title">Market Rank</span>
                         <p class="text-lg font-semibold text-indigo-300" id="market-rank">#?</p>
                     </div>
                     <div class="grid grid-cols-2 gap-2 pt-2">
                          <div class="relative">
-                             <span class="text-sm text-gray-400 uppercase tracking-wider">1h Change</span>
+                             <span class="text-sm text-gray-400 uppercase tracking-wider" id="label-1h-change-title">1h Change</span>
                              <p class="text-lg font-semibold" id="change-1h">-</p>
                          </div>
                          <div>
-                             <span class="text-sm text-gray-400 uppercase tracking-wider">Inception Return</span>
+                             <span class="text-sm text-gray-400 uppercase tracking-wider" id="label-inception-return-title">Return Since Inception</span>
                              <p class="text-lg font-semibold" id="inception-return">-</p>
                          </div>
                     </div>
                     <div class="grid grid-cols-2 gap-2 pt-2">
                          <div>
-                             <span class="text-sm text-gray-400 uppercase tracking-wider">All-Time High</span>
+                             <span class="text-sm text-gray-400 uppercase tracking-wider" id="label-all-time-high-title">All-Time High</span>
                              <p class="text-base font-medium text-emerald-400" id="all-time-high">$0.00</p>
                          </div>
                          <div>
-                             <span class="text-sm text-gray-400 uppercase tracking-wider">All-Time Low</span>
+                             <span class="text-sm text-gray-400 uppercase tracking-wider" id="label-all-time-low-title">All-Time Low</span>
                              <p class="text-base font-medium text-red-400" id="all-time-low">$0.00</p>
                          </div>
                     </div>
                     <div class="grid grid-cols-2 gap-2 pt-2 border-t border-gray-700/30 mt-2">
                          <div>
-                             <span class="text-sm text-gray-400 uppercase tracking-wider">Volatility</span>
+                             <span class="text-sm text-gray-400 uppercase tracking-wider" id="label-volatility-title">Volatility</span>
                              <p class="text-base font-medium text-blue-300" id="volatility">-</p>
                          </div>
                          <div>
-                             <span class="text-sm text-gray-400 uppercase tracking-wider">Max Drawdown</span>
+                             <span class="text-sm text-gray-400 uppercase tracking-wider" id="label-max-drawdown-title">Max Drawdown</span>
                              <p class="text-base font-medium text-orange-400" id="max-drawdown">-</p>
                          </div>
                     </div>
                 </div>
 
                  <div class="grid grid-cols-2 gap-2 pt-3 mt-auto border-t border-gray-700/50">
-                    <button class="w-full bg-gradient-to-r from-red-700 to-rose-700 text-white font-semibold py-1 px-3 rounded-lg text-sm">
-                        <span>Sell: <span id="sell-price-display">-</span></span>
+                    <button id="sell-button" class="w-full bg-gradient-to-r from-red-700 to-rose-700 text-white font-semibold py-1 px-3 rounded-lg text-sm">
+                        <span id="label-sell-button">Sell: <span id="sell-price-display">-</span></span>
                     </button>
-                     <button class="w-full bg-gradient-to-r from-emerald-700 to-green-700 text-white font-semibold py-1 px-3 rounded-lg text-sm">
-                         <span>Buy: <span id="buy-price-display">-</span></span>
+                     <button id="buy-button" class="w-full bg-gradient-to-r from-emerald-700 to-green-700 text-white font-semibold py-1 px-3 rounded-lg text-sm">
+                         <span id="label-buy-button">Buy: <span id="buy-price-display">-</span></span>
                     </button>
                 </div>
                  <div id="additional-info" class="mt-auto pt-3 text-sm text-gray-400">
@@ -367,21 +367,21 @@
 
         <div class="flex items-center gap-4">
              <div class="h-px flex-1 bg-gradient-to-l from-gray-700 to-transparent"></div>
-             <h3 class="text-center text-lg font-semibold text-gray-400">Market Data</h3>
+             <h3 class="text-center text-lg font-semibold text-gray-400" id="label-market-data">Market Data</h3>
              <div class="h-px flex-1 bg-gradient-to-r from-gray-700 to-transparent"></div>
         </div>
 
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             <section class="bg-gradient-to-br from-gray-700 to-gray-800 p-4 rounded-lg shadow-xl">
-                 <h3 class="text-lg font-semibold text-white mb-3 text-center">CPI Evolution</h3>
+                 <h3 class="text-lg font-semibold text-white mb-3 text-center" id="label-cpi-evolution">CPI Evolution</h3>
                 <div class="chart-container h-[250px] bg-gray-900/50 rounded-md">
                     <canvas id="cpi-chart"></canvas>
                 </div>
             </section>
 
             <section class="bg-gradient-to-br from-gray-700 to-gray-800 p-4 rounded-lg shadow-xl">
-                 <h3 class="text-lg font-semibold text-white mb-3 text-center">Market Cap Distribution</h3>
+                 <h3 class="text-lg font-semibold text-white mb-3 text-center" id="label-market-cap">Market Cap Distribution</h3>
                 <div class="chart-container h-[250px] bg-gray-900/50 rounded-md">
                     <div id="treemap-container"></div>
                 </div>
@@ -390,12 +390,12 @@
 
         <div class="flex items-center gap-4 mt-6">
              <div class="h-px flex-1 bg-gradient-to-l from-gray-700 to-transparent"></div>
-             <h3 class="text-center text-lg font-semibold text-gray-400">Portfolios info</h3>
+             <h3 class="text-center text-lg font-semibold text-gray-400" id="label-portfolio-info">Portfolio Info</h3>
              <div class="h-px flex-1 bg-gradient-to-r from-gray-700 to-transparent"></div>
         </div>
 
         <div id="top-portfolios-container" class="mt-4 w-full">
-             <p class="text-gray-400 text-center">Loading top portfolios...</p>
+             <p class="text-gray-400 text-center" id="label-loading-portfolios">Loading top portfolios...</p>
         </div>
 
 
