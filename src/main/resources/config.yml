@@ -5,13 +5,14 @@ language: 'en_US'
 
 database:
   # Available types: SQLite, MySQL
-  type: 'MySQL'
+  type: 'SQLite'
 
-  host: '96.9.213.246'
-  port: 3306
-  database: 'nascraft'
-  user: 'nascraft_testing'
-  password: 'KcpVCNC@EhPsiIK9n'
+  mysql:
+    host: 'localhost'
+    port: 3306
+    database: 'nascraft'
+    user: 'root'
+    password: 'password'
 
   # How many days should logs of trades last in the database?
   # With the option 60, all trades older than 60 days will be automatically removed.

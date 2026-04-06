@@ -41,21 +41,20 @@ public class ImagesManager {
 
         if (items.contains("items." + identifier + ".item-stack.type")) {
 
-            imageName = items.getString("items." + identifier + ".item-stack.type").toLowerCase() + ".png";
+            String materialType = items.getString("items." + identifier + ".item-stack.type").toLowerCase();
+            imageName = materialType + ".png";
             imagePath = "1-21-4-materials/minecraft_" + imageName;
 
             try (InputStream input = Nascraft.getInstance().getResource(imagePath)) {
                 if (input != null) {
                     image = ImageIO.read(input);
-                } else {
-                    Nascraft.getInstance().getLogger().info("Unable to find image: " + imageName);
                 }
-            } catch (IOException e) {
-                Nascraft.getInstance().getLogger().info("Unable to read image: " + imageName);
-            } catch (IllegalArgumentException e) {
-                Nascraft.getInstance().getLogger().info("Invalid argument for image: " + imageName);
-            }
+            } catch (IOException | IllegalArgumentException ignored) {}
 
+            if (image != null) return image;
+
+            // Fallback: download from Mojang's official texture CDN
+            image = MojangTextureProvider.getInstance().getTexture(materialType);
             return image;
         }
 
@@ -65,14 +64,14 @@ public class ImagesManager {
         try (InputStream input = Nascraft.getInstance().getResource(imagePath)) {
             if (input != null) {
                 image = ImageIO.read(input);
-            } else {
-                Nascraft.getInstance().getLogger().info("Unable to find image: " + imageName);
             }
-        } catch (IOException e) {
-            Nascraft.getInstance().getLogger().info("Unable to read image: " + imageName);
-        } catch (IllegalArgumentException e) {
-            Nascraft.getInstance().getLogger().info("Invalid argument for image: " + imageName);
-        }
+        } catch (IOException | IllegalArgumentException ignored) {}
+
+        if (image != null) return image;
+
+        // Fallback: download from Mojang's official texture CDN
+        String materialName = identifier.replaceAll("\\d", "").toLowerCase();
+        image = MojangTextureProvider.getInstance().getTexture(materialName);
 
         return image;
     }
