@@ -27,6 +27,37 @@ document.addEventListener('DOMContentLoaded', () => {
     const maxDrawdownElement = document.getElementById('max-drawdown');
     const topPortfoliosContainer = document.getElementById('top-portfolios-container');
 
+    // Mobile Sidebar Logic
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+    const sidebar = document.getElementById('sidebar');
+    const mobileOverlay = document.getElementById('mobile-overlay');
+
+    function toggleSidebar(show) {
+        if (!sidebar || !mobileOverlay) return;
+        if (show) {
+            sidebar.classList.remove('-translate-x-full');
+            mobileOverlay.classList.remove('hidden');
+            setTimeout(() => {
+                mobileOverlay.classList.remove('opacity-0');
+                mobileOverlay.classList.add('opacity-100');
+            }, 10);
+            document.body.style.overflow = 'hidden'; 
+        } else {
+            sidebar.classList.add('-translate-x-full');
+            mobileOverlay.classList.remove('opacity-100');
+            mobileOverlay.classList.add('opacity-0');
+            setTimeout(() => {
+                mobileOverlay.classList.add('hidden');
+            }, 300);
+            document.body.style.overflow = '';
+        }
+    }
+
+    if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', () => toggleSidebar(true));
+    if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', () => toggleSidebar(false));
+    if (mobileOverlay) mobileOverlay.addEventListener('click', () => toggleSidebar(false));
+
 
     let lightweightChart = null;
     let mainPriceSeries = null;
@@ -260,7 +291,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
 
-                li.addEventListener('click', () => handleItemSelection(itemIdentifierStr));
+                li.addEventListener('click', () => {
+                    handleItemSelection(itemIdentifierStr);
+                    if (window.innerWidth < 640 && typeof toggleSidebar === 'function') {
+                        toggleSidebar(false);
+                    }
+                });
                 fragment.appendChild(li);
             });
         }
