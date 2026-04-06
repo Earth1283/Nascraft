@@ -137,6 +137,14 @@ public class Config {
         }
     }
 
+    public String getWebAddress() {
+        if (config.contains("web.address")) {
+            return config.getString("web.address");
+        } else {
+            return "http://localhost:" + getWebPort();
+        }
+    }
+
     public Boolean getCheckResources() {
         return config.getBoolean("auto-resources-injection");
     }

@@ -390,9 +390,73 @@ public class MySQL implements Database {
     }
 
     @Override
+    public String getUUIDbyName(String name) {
+        return null;
+    }
+
+    @Override
     public void saveOrUpdateName(UUID uuid, String nick) {
 
     }
 
+    @Override
+    public void updateBalance(UUID uuid) {
+
+    }
+
+    @Override
+    public java.util.Map<Integer, Double> getMoneySupplyHistory() {
+        return null;
+    }
+
+    @Override
+    public void storeCredentials(String userName, String hash) {
+
+    }
+
+    @Override
+    public String retrieveHash(String userName) {
+        return null;
+    }
+
+    @Override
+    public void clearUserCredentials(String userName) {
+
+    }
+
+    @Override
+    public void saveOrUpdatePlayerStats(UUID uuid) {
+
+    }
+
+    @Override
+    public List<me.bounser.nascraft.web.dto.PlayerStatsDTO> getAllPlayerStats(UUID uuid) {
+        return null;
+    }
+
+    @Override
+    public void saveDiscordLink(UUID uuid, String userid, String nickname) {
+
+    }
+
+    @Override
+    public void removeDiscordLink(UUID uuid) {
+
+    }
+
+    @Override
+    public String getDiscordUserId(UUID uuid) {
+        return null;
+    }
+
+    @Override
+    public UUID getUUIDFromUserid(String userid) {
+        return null;
+    }
+
+    @Override
+    public String getNicknameFromUserId(String userid) {
+        return null;
+    }
 
 }

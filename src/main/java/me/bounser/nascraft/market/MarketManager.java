@@ -619,13 +619,3 @@ public class MarketManager {
     }
 
 }
-etMaximumLoan(uuid),
-                Config.getInstance().getLoansDailyInterest(),
-                Config.getInstance().getLoansMinimumInterest(),
-                debt.getNextPaymentTime().toString()
-        );
-
-        return debtDTO;
-    }
-
-}

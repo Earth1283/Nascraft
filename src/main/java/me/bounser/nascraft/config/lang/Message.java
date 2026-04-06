@@ -33,6 +33,7 @@ public enum Message {
     NO_PERMISSION,
     WRONG_MATERIAL,
     WRONG_NUMBER_FORMAT,
+    NOT_A_PLAYER,
 
     // COMMANDS
 

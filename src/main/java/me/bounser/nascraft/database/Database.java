@@ -113,6 +113,23 @@ public interface Database {
     void retrieveLimitOrders();
 
     String getNameByUUID(UUID uuid);
+    String getUUIDbyName(String name);
     void saveOrUpdateName(UUID uuid, String name);
+
+    void updateBalance(UUID uuid);
+    java.util.Map<Integer, Double> getMoneySupplyHistory();
+
+    void storeCredentials(String userName, String hash);
+    String retrieveHash(String userName);
+    void clearUserCredentials(String userName);
+
+    void saveOrUpdatePlayerStats(UUID uuid);
+    List<me.bounser.nascraft.web.dto.PlayerStatsDTO> getAllPlayerStats(UUID uuid);
+
+    void saveDiscordLink(UUID uuid, String userid, String nickname);
+    void removeDiscordLink(UUID uuid);
+    String getDiscordUserId(UUID uuid);
+    UUID getUUIDFromUserid(String userid);
+    String getNicknameFromUserId(String userid);
 
 }
