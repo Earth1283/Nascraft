@@ -4,6 +4,7 @@ import me.bounser.nascraft.Nascraft;
 import me.bounser.nascraft.config.Config;
 import me.bounser.nascraft.config.lang.Lang;
 import me.bounser.nascraft.config.lang.Message;
+import me.bounser.nascraft.exchange.ExchangeDatabase;
 import me.bounser.nascraft.exchange.company.Company;
 import me.bounser.nascraft.exchange.company.CompanyManager;
 import me.bounser.nascraft.exchange.company.CompanyStatus;
@@ -50,6 +51,10 @@ public class IpoManager {
         UUID companyId = UUID.randomUUID();
         Company company = new Company(companyId, name, ticker, sharePrice, BigDecimal.valueOf(sharesOffered));
         CompanyManager.getInstance().registerCompany(company);
+        Bukkit.getScheduler().runTaskAsynchronously(Nascraft.getInstance(), () -> {
+            try { ExchangeDatabase.getInstance().saveCompany(company); }
+            catch (IllegalStateException ignored) {}
+        });
 
         IpoPending pending = new IpoPending(companyId, ipoFee, sharePrice, sharesOffered, prospectus);
         pending.status = IpoStatus.FEE_PAID;
@@ -65,6 +70,10 @@ public class IpoManager {
             CompanyManager.getInstance().getCompany(companyId).ifPresent(company -> {
                 company.setStatus(CompanyStatus.ACTIVE);
                 company.setLastVaultSnapshot(company.getCurrentVaultValue());
+                Bukkit.getScheduler().runTaskAsynchronously(Nascraft.getInstance(), () -> {
+                    try { ExchangeDatabase.getInstance().saveCompany(company); }
+                    catch (IllegalStateException ignored) {}
+                });
             });
         }
     }
@@ -76,6 +85,10 @@ public class IpoManager {
             CompanyManager.getInstance().getCompany(companyId).ifPresent(company -> {
                 company.setStatus(CompanyStatus.DELISTED);
                 company.setHaltReason(reason);
+                Bukkit.getScheduler().runTaskAsynchronously(Nascraft.getInstance(), () -> {
+                    try { ExchangeDatabase.getInstance().saveCompany(company); }
+                    catch (IllegalStateException ignored) {}
+                });
             });
         }
     }

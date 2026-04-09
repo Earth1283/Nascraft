@@ -89,6 +89,13 @@ public class ExchangeOrder {
         updatedAt = System.currentTimeMillis();
     }
 
+    /** Restores persisted fill state from the database at startup (bypasses fill logic). */
+    public void restoreState(BigDecimal filledQty, OrderStatus status, long updatedAt) {
+        this.filledQuantity = filledQty;
+        this.status = status;
+        this.updatedAt = updatedAt;
+    }
+
     public BigDecimal getRemainingQuantity() {
         return quantity.subtract(filledQuantity).max(BigDecimal.ZERO);
     }

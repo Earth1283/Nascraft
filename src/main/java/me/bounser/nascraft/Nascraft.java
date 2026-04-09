@@ -12,6 +12,7 @@ import me.bounser.nascraft.commands.alert.AlertsCommand;
 import me.bounser.nascraft.commands.alert.SetAlertCommand;
 import me.bounser.nascraft.commands.credentials.WebCommand;
 import me.bounser.nascraft.commands.discord.DiscordCommand;
+import me.bounser.nascraft.commands.exchange.ExchangeCommand;
 import me.bounser.nascraft.commands.portfolio.PortfolioCommand;
 import me.bounser.nascraft.inventorygui.Portfolio.PortfolioInventory;
 import me.bounser.nascraft.commands.market.MarketCommand;
@@ -81,76 +82,170 @@ public final class Nascraft extends JavaPlugin {
 
     public static NascraftAPI getAPI() { return apiInstance == null ? apiInstance = new NascraftAPI() : apiInstance; }
 
+    // ANSI colour constants used for console output
+    private static final String ANSI_RESET  = "\u001B[0m";
+    private static final String ANSI_BOLD   = "\u001B[1m";
+    private static final String ANSI_CYAN   = "\u001B[36m";
+    private static final String ANSI_GREEN  = "\u001B[32m";
+    private static final String ANSI_YELLOW = "\u001B[33m";
+    private static final String ANSI_GOLD   = "\u001B[38;5;214m";
+    private static final String ANSI_GRAY   = "\u001B[90m";
+    private static final String ANSI_RED    = "\u001B[31m";
+
+    /** Log a green success line. */
+    private void logOk(String msg) {
+        getLogger().info(ANSI_GREEN + "  \u2714 " + ANSI_RESET + msg);
+    }
+
+    /** Log a yellow warning/skipped line. */
+    private void logSkip(String msg) {
+        getLogger().info(ANSI_YELLOW + "  \u26A0 " + ANSI_RESET + msg);
+    }
+
+    /** Log a cyan informational line. */
+    private void logInfo(String msg) {
+        getLogger().info(ANSI_CYAN + "  \u2139 " + ANSI_RESET + msg);
+    }
+
+    /** Log a red error line. */
+    private void logErr(String msg) {
+        getLogger().info(ANSI_RED + "  \u2718 " + ANSI_RESET + msg);
+    }
+
+    private void printBanner() {
+        String v = getDescription().getVersion();
+        System.out.println(ANSI_CYAN + "  \u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510" + ANSI_RESET);
+        System.out.println(ANSI_CYAN + "  \u2502  " + ANSI_BOLD + ANSI_GOLD  + "  N A S C R A F T  " + ANSI_RESET + ANSI_CYAN + "\u2736  " + ANSI_RESET + "Economy Market Engine        " + ANSI_CYAN + "\u2502" + ANSI_RESET);
+        System.out.println(ANSI_CYAN + "  \u2502  " + ANSI_GRAY  + "  version " + ANSI_GREEN + v + ANSI_GRAY + "  \u00B7  by Bounser" + ANSI_RESET + "                     " + ANSI_CYAN + "\u2502" + ANSI_RESET);
+        System.out.println(ANSI_CYAN + "  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518" + ANSI_RESET);
+        System.out.println();
+    }
+
     @Override
     public void onEnable() {
 
         main = this;
 
-        Config config = Config.getInstance();
+        printBanner();
 
+        logInfo("Starting initialization sequence...");
+
+        logInfo("Loading configuration...");
+        Config config = Config.getInstance();
+        logOk("Configuration loaded " + ANSI_GRAY + "(lang: " + config.getSelectedLanguage() + ", db: " + config.getDatabaseType() + ")" + ANSI_RESET);
+
+        logInfo("Setting up metrics...");
         setupMetrics();
+        logOk("bStats metrics initialized");
 
         new UpdateChecker(this, 108216).getVersion(version -> {
-            if (!getDescription().getVersion().equals(version))
-                getLogger().info("There is a new version available! Download it here: https://www.spigotmc.org/resources/108216/");
+            if (!getDescription().getVersion().equals(version)) {
+                logSkip("New version available " + ANSI_GRAY + "(" + version + ")" + ANSI_RESET + " \u2192 spigotmc.org/resources/108216/");
+            } else {
+                logOk("Plugin is up to date");
+            }
         });
 
+        logInfo("Initializing Adventure platform...");
         this.adventure = BukkitAudiences.create(this);
+        logOk("Adventure platform ready");
 
-        if (!setupEconomy())
-            getLogger().warning("Vault is not installed! You'll have to provide another supplier.");
+        logInfo("Hooking into Vault economy...");
+        if (!setupEconomy()) {
+            logSkip("Vault not found \u2014 configure an alternative currency supplier");
+        } else {
+            logOk("Vault economy hooked");
+        }
 
-        setupPermissions();
+        logInfo("Setting up permissions...");
+        if (setupPermissions()) {
+            logOk("Permissions provider loaded");
+        } else {
+            logSkip("No permissions provider found \u2014 using default Bukkit permissions");
+        }
 
+        logInfo("Checking AdvancedGUI integration...");
         setupAdvancedGUI(config);
+
+        logInfo("Checking PlaceholderAPI integration...");
         setupPlaceholderAPI();
+
+        logInfo("Setting up Discord extension...");
         setupDiscordExtension(config);
+
+        logInfo("Setting up sell-wands...");
         setupSellWands(config);
+
+        logInfo("Setting up loan system...");
         setupLoans(config);
 
+        logInfo("Preparing image storage...");
         createImagesFolder();
+        logOk("Images folder ready");
 
+        logInfo("Loading market data...");
         MarketManager.getInstance();
+        logOk("Market manager initialized " + ANSI_GRAY + "(" + MarketManager.getInstance().getAllParentItems().size() + " items)" + ANSI_RESET);
 
+        logInfo("Registering commands and listeners...");
         setupCommandsAndListeners(config);
+        logOk("Commands and listeners registered");
 
         Bukkit.getPluginManager().registerEvents(new EventsManager(), this);
         ItemChartReduced.load();
+        logOk("Events manager and chart data ready");
 
+        logInfo("Starting web server...");
         setupWebServer(config);
 
         // Exchange subsystem (MySQL must be configured)
         if (config.getDatabaseType() == me.bounser.nascraft.database.DatabaseType.MYSQL) {
+            logInfo("Initializing stock exchange subsystem " + ANSI_GRAY + "(async)" + ANSI_RESET + "...");
             getServer().getScheduler().runTaskAsynchronously(this, () -> {
                 ExchangeManager.getInstance().init();
+                logOk("Exchange subsystem ready");
             });
+            logInfo("Registering exchange commands...");
+            new ExchangeCommand();
+            logOk("Exchange commands registered " + ANSI_GRAY + "(/exchange, /ex)" + ANSI_RESET);
+        } else {
+            logSkip("Stock exchange disabled \u2014 requires MySQL");
         }
+
+        System.out.println();
+        System.out.println(ANSI_GREEN + ANSI_BOLD + "  Nascraft v" + getDescription().getVersion() + " enabled successfully." + ANSI_RESET);
+        System.out.println();
     }
 
     private void setupAdvancedGUI(Config config) {
         Plugin AGUI = Bukkit.getPluginManager().getPlugin("AdvancedGUI");
 
         if (AGUI == null || !AGUI.isEnabled()) {
-            getLogger().warning("AdvancedGUI is not installed! You won't have graphs in-game without it!");
-            getLogger().warning("Learn more about AdvancedGUI here: https://www.spigotmc.org/resources/83636/");
+            logSkip("AdvancedGUI not found \u2014 in-game charts will be unavailable");
+            logSkip("  Install it at spigotmc.org/resources/83636/");
         } else {
             if (config.getCheckResources()) checkResources();
             LayoutModifier.getInstance();
-            if (!Bukkit.getPluginManager().getPlugin("AdvancedGUI").getDescription().getVersion().equals(AGUI_VERSION))
-                getLogger().warning("This plugin was made using AdvancedGUI " + AGUI_VERSION + "! You may encounter errors on other versions");
+            if (!AGUI.getDescription().getVersion().equals(AGUI_VERSION)) {
+                logSkip("AdvancedGUI version mismatch " + ANSI_GRAY + "(expected " + AGUI_VERSION + ", found " + AGUI.getDescription().getVersion() + ")" + ANSI_RESET);
+            } else {
+                logOk("AdvancedGUI hooked " + ANSI_GRAY + "(v" + AGUI.getDescription().getVersion() + ")" + ANSI_RESET);
+            }
         }
     }
 
     private void setupPlaceholderAPI() {
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
-            getLogger().info("PlaceholderAPI detected!");
             new PAPIExpansion().register();
+            logOk("PlaceholderAPI hooked \u2014 placeholders registered");
+        } else {
+            logSkip("PlaceholderAPI not found \u2014 placeholders unavailable");
         }
     }
 
     private void setupDiscordExtension(Config config) {
         if (config.getDiscordEnabled()) {
-            getLogger().info("Enabling discord extension...");
+            logInfo("  Discord: registering commands...");
 
             if (Config.getInstance().getLinkingMethod().equals(LinkingMethod.NATIVE)
             && config.isCommandEnabled("link")) new LinkCommand();
@@ -161,7 +256,9 @@ public final class Nascraft extends JavaPlugin {
             if (config.isCommandEnabled("discord")) new DiscordCommand();
 
             new DiscordBot();
-            getLogger().info("Discord extension loaded!");
+            logOk("Discord bot connected " + ANSI_GRAY + "(linking: " + Config.getInstance().getLinkingMethod() + ")" + ANSI_RESET);
+        } else {
+            logSkip("Discord integration disabled");
         }
     }
 
@@ -170,12 +267,18 @@ public final class Nascraft extends JavaPlugin {
             if (config.isCommandEnabled("givesellwand")) new GiveSellWandCommand();
             Bukkit.getPluginManager().registerEvents(new WandListener(), this);
             WandsManager.getInstance();
+            logOk("Sell-wands enabled");
+        } else {
+            logSkip("Sell-wands disabled");
         }
     }
 
     private void setupLoans(Config config) {
         if (config.getLoansEnabled()) {
             DebtManager.getInstance();
+            logOk("Loan system enabled");
+        } else {
+            logSkip("Loan system disabled");
         }
     }
 
@@ -226,20 +329,28 @@ public final class Nascraft extends JavaPlugin {
 
             getServer().getScheduler().runTaskAsynchronously(this, () -> {
                 webServerManager.startServer();
+                logOk("Web server started " + ANSI_GRAY + "(port " + config.getWebPort() + ")" + ANSI_RESET);
             });
+        } else {
+            logSkip("Web server disabled");
         }
     }
 
     @Override
     public void onDisable() {
 
-        getLogger().info("Saving and closing connection with database...");
+        System.out.println();
+        System.out.println(ANSI_YELLOW + ANSI_BOLD + "  Nascraft shutting down..." + ANSI_RESET);
+
+        logInfo("Flushing market data to database...");
         DatabaseManager.get().getDatabase().disconnect();
-        getLogger().info("Done!");
+        logOk("Database saved and connection closed");
 
         if (Config.getInstance().getDiscordEnabled() && DiscordBot.getInstance() != null) {
+            logInfo("Shutting down Discord bot...");
             DiscordBot.getInstance().sendClosedMessage();
             DiscordBot.getInstance().getJDA().shutdown();
+            logOk("Discord bot disconnected");
         }
 
         if (this.adventure != null) {
@@ -248,11 +359,15 @@ public final class Nascraft extends JavaPlugin {
         }
 
         if (webServerManager != null && webServerManager.isRunning()) {
-            getLogger().info("Stopping web server...");
+            logInfo("Stopping web server...");
             webServerManager.stopServer();
+            logOk("Web server stopped");
         }
 
         ExchangeManager.getInstance().shutdown();
+
+        System.out.println(ANSI_GRAY + "  Nascraft v" + getDescription().getVersion() + " disabled." + ANSI_RESET);
+        System.out.println();
     }
 
     private void setupMetrics() {

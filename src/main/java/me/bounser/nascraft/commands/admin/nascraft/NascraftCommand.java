@@ -7,6 +7,9 @@ import me.bounser.nascraft.config.Config;
 import me.bounser.nascraft.config.lang.Lang;
 import me.bounser.nascraft.config.lang.Message;
 import me.bounser.nascraft.database.DatabaseManager;
+import me.bounser.nascraft.exchange.company.CompanyManager;
+import me.bounser.nascraft.exchange.ipo.IpoManager;
+import me.bounser.nascraft.exchange.vault.CompanyVaultManager;
 import me.bounser.nascraft.formatter.Formatter;
 import me.bounser.nascraft.formatter.Style;
 import me.bounser.nascraft.managers.DebtManager;
@@ -16,6 +19,7 @@ import me.bounser.nascraft.market.MarketManager;
 import me.bounser.nascraft.market.unit.Item;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -28,7 +32,7 @@ import java.util.UUID;
 
 public class NascraftCommand extends Command {
 
-    private final List<String> arguments = Arrays.asList("reload", "edit", "stop", "resume", "info", "save", "logs", "forgivedebt");
+    private final List<String> arguments = Arrays.asList("reload", "edit", "stop", "resume", "info", "save", "logs", "forgivedebt", "exchange");
 
     private final List<String> tradesArguments = Arrays.asList("<player nick or uuid>", "<item>", "global");
 
@@ -215,8 +219,131 @@ public class NascraftCommand extends Command {
 
                 break;
 
+            case "exchange":
+                handleExchangeAdmin(sender, args);
+                break;
+
             default:
                 sender.sendMessage(syntaxError);
+        }
+    }
+
+    // ── /nascraft exchange <sub> [args] ───────────────────────────────────────
+
+    private static final List<String> EXCHANGE_SUBS =
+            Arrays.asList("pending", "approve", "reject", "halt", "resume", "price");
+
+    private void handleExchangeAdmin(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage(ChatColor.DARK_PURPLE + "[NC] " + ChatColor.RED
+                    + "Usage: /nascraft exchange <pending|approve|reject|halt|resume|price>");
+            return;
+        }
+
+        switch (args[1].toLowerCase()) {
+
+            case "pending": {
+                List<IpoManager.IpoPending> list = IpoManager.getInstance().getAllPending();
+                if (list.isEmpty()) {
+                    sender.sendMessage(ChatColor.DARK_PURPLE + "[NC] " + ChatColor.GRAY + "No pending IPOs.");
+                    return;
+                }
+                sender.sendMessage(ChatColor.DARK_PURPLE + "[NC] " + ChatColor.GRAY + "Pending IPOs:");
+                for (IpoManager.IpoPending p : list) {
+                    sender.sendMessage(ChatColor.GOLD + "  " + p.companyId
+                            + ChatColor.GRAY + " | status=" + p.status
+                            + " | price=" + p.sharePrice
+                            + " | shares=" + p.sharesOffered);
+                }
+                break;
+            }
+
+            case "approve": {
+                if (args.length < 3) {
+                    sender.sendMessage(ChatColor.DARK_PURPLE + "[NC] " + ChatColor.RED + "Usage: /nascraft exchange approve <companyId>");
+                    return;
+                }
+                UUID id = parseUUID(sender, args[2]);
+                if (id == null) return;
+                IpoManager.getInstance().approveIpo(id);
+                sender.sendMessage(ChatColor.DARK_PURPLE + "[NC] " + ChatColor.GREEN + "IPO approved: " + id);
+                break;
+            }
+
+            case "reject": {
+                if (args.length < 4) {
+                    sender.sendMessage(ChatColor.DARK_PURPLE + "[NC] " + ChatColor.RED + "Usage: /nascraft exchange reject <companyId> <reason>");
+                    return;
+                }
+                UUID id = parseUUID(sender, args[2]);
+                if (id == null) return;
+                String reason = String.join(" ", Arrays.copyOfRange(args, 3, args.length));
+                IpoManager.getInstance().rejectIpo(id, reason);
+                sender.sendMessage(ChatColor.DARK_PURPLE + "[NC] " + ChatColor.GRAY + "IPO rejected: " + id + " — " + reason);
+                break;
+            }
+
+            case "halt": {
+                if (args.length < 4) {
+                    sender.sendMessage(ChatColor.DARK_PURPLE + "[NC] " + ChatColor.RED + "Usage: /nascraft exchange halt <ticker> <reason>");
+                    return;
+                }
+                String ticker = args[2].toUpperCase();
+                CompanyManager.getInstance().getCompanyByTicker(ticker).ifPresentOrElse(c -> {
+                    String reason = String.join(" ", Arrays.copyOfRange(args, 3, args.length));
+                    CompanyManager.getInstance().haltCompany(c.getId(), reason);
+                    sender.sendMessage(ChatColor.DARK_PURPLE + "[NC] " + ChatColor.GRAY + "Halted " + ticker + ": " + reason);
+                }, () -> sender.sendMessage(ChatColor.DARK_PURPLE + "[NC] " + ChatColor.RED + "Unknown ticker: " + ticker));
+                break;
+            }
+
+            case "resume": {
+                if (args.length < 3) {
+                    sender.sendMessage(ChatColor.DARK_PURPLE + "[NC] " + ChatColor.RED + "Usage: /nascraft exchange resume <ticker>");
+                    return;
+                }
+                String ticker = args[2].toUpperCase();
+                CompanyManager.getInstance().getCompanyByTicker(ticker).ifPresentOrElse(c -> {
+                    CompanyManager.getInstance().resumeCompany(c.getId());
+                    sender.sendMessage(ChatColor.DARK_PURPLE + "[NC] " + ChatColor.GRAY + "Resumed " + ticker + ".");
+                }, () -> sender.sendMessage(ChatColor.DARK_PURPLE + "[NC] " + ChatColor.RED + "Unknown ticker: " + ticker));
+                break;
+            }
+
+            case "price": {
+                if (args.length < 4) {
+                    sender.sendMessage(ChatColor.DARK_PURPLE + "[NC] " + ChatColor.RED
+                            + "Usage: /nascraft exchange price <material> <pricePerUnit>");
+                    return;
+                }
+                Material mat = Material.getMaterial(args[2].toUpperCase());
+                if (mat == null) {
+                    sender.sendMessage(ChatColor.DARK_PURPLE + "[NC] " + ChatColor.RED + "Unknown material: " + args[2]);
+                    return;
+                }
+                double price;
+                try { price = Double.parseDouble(args[3]); }
+                catch (NumberFormatException e) {
+                    sender.sendMessage(ChatColor.DARK_PURPLE + "[NC] " + ChatColor.RED + "Invalid price.");
+                    return;
+                }
+                CompanyVaultManager.getInstance().setItemPrice(mat, price);
+                sender.sendMessage(ChatColor.DARK_PURPLE + "[NC] " + ChatColor.GRAY
+                        + "Vault price set: " + mat.name() + " = " + price + " each.");
+                break;
+            }
+
+            default:
+                sender.sendMessage(ChatColor.DARK_PURPLE + "[NC] " + ChatColor.RED
+                        + "Unknown exchange sub-command. Options: " + String.join(", ", EXCHANGE_SUBS));
+        }
+    }
+
+    private UUID parseUUID(CommandSender sender, String raw) {
+        try { return UUID.fromString(raw); }
+        catch (IllegalArgumentException e) {
+            sender.sendMessage(ChatColor.DARK_PURPLE + "[NC] " + ChatColor.RED + "Invalid UUID: " + raw);
+            return null;
         }
     }
 
@@ -257,6 +384,9 @@ public class NascraftCommand extends Command {
                 }
             }
         }
+
+        if (args.length > 1 && args[0].equalsIgnoreCase("exchange"))
+            return StringUtil.copyPartialMatches(args[1], EXCHANGE_SUBS, new ArrayList<>());
 
         return StringUtil.copyPartialMatches(args[0], arguments, new ArrayList<>());
     }

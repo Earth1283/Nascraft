@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import me.bounser.nascraft.Nascraft;
+import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import javax.imageio.ImageIO;
@@ -22,9 +23,13 @@ public class MojangTextureProvider {
 
     private static MojangTextureProvider instance;
 
-    private static final String TARGET_VERSION = "1.21.4";
     private static final String VERSION_MANIFEST_URL = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
     private static final String RESOURCE_CDN_BASE = "https://resources.download.minecraft.net/";
+
+    /** Extracts the vanilla Minecraft version from the Bukkit API version string (e.g. "1.21.4-R0.1-SNAPSHOT" → "1.21.4"). */
+    private static String detectMinecraftVersion() {
+        return Bukkit.getBukkitVersion().split("-")[0];
+    }
 
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
@@ -84,20 +89,57 @@ public class MojangTextureProvider {
 
     private String fetchAssetIndex() {
         try {
+            String targetVersion = detectMinecraftVersion();
+            Nascraft.getInstance().getLogger().info("Fetching Mojang asset index for Minecraft " + targetVersion + "...");
+
             String manifestJson = httpGet(VERSION_MANIFEST_URL);
             if (manifestJson == null) return null;
 
             JsonObject manifest = JsonParser.parseString(manifestJson).getAsJsonObject();
             String versionUrl = null;
+
+            // Try exact match first, then fall back to the latest release whose major.minor matches
+            String targetMajorMinor = targetVersion.contains(".") ?
+                    targetVersion.substring(0, targetVersion.lastIndexOf('.')) : targetVersion;
+
             for (JsonElement el : manifest.getAsJsonArray("versions")) {
                 JsonObject v = el.getAsJsonObject();
-                if (TARGET_VERSION.equals(v.get("id").getAsString())) {
+                String id = v.get("id").getAsString();
+                if (id.equals(targetVersion)) {
                     versionUrl = v.get("url").getAsString();
                     break;
                 }
             }
+
+            // If exact version not found, use the latest release that starts with the same major.minor
             if (versionUrl == null) {
-                Nascraft.getInstance().getLogger().warning("Minecraft version " + TARGET_VERSION + " not found in manifest.");
+                for (JsonElement el : manifest.getAsJsonArray("versions")) {
+                    JsonObject v = el.getAsJsonObject();
+                    String id = v.get("id").getAsString();
+                    String type = v.get("type").getAsString();
+                    if ("release".equals(type) && id.startsWith(targetMajorMinor + ".")) {
+                        versionUrl = v.get("url").getAsString();
+                        Nascraft.getInstance().getLogger().info("Exact version " + targetVersion + " not in manifest; using " + id);
+                        break;
+                    }
+                }
+            }
+
+            // Last resort: use whatever the latest release is
+            if (versionUrl == null) {
+                String latestId = manifest.getAsJsonObject("latest").get("release").getAsString();
+                for (JsonElement el : manifest.getAsJsonArray("versions")) {
+                    JsonObject v = el.getAsJsonObject();
+                    if (latestId.equals(v.get("id").getAsString())) {
+                        versionUrl = v.get("url").getAsString();
+                        Nascraft.getInstance().getLogger().warning("Version " + targetVersion + " not found; falling back to latest release " + latestId);
+                        break;
+                    }
+                }
+            }
+
+            if (versionUrl == null) {
+                Nascraft.getInstance().getLogger().warning("Could not resolve any usable Minecraft version from the manifest.");
                 return null;
             }
 

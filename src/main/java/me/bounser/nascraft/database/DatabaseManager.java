@@ -1,5 +1,6 @@
 package me.bounser.nascraft.database;
 
+import me.bounser.nascraft.Nascraft;
 import me.bounser.nascraft.config.Config;
 import me.bounser.nascraft.database.mysql.MySQL;
 import me.bounser.nascraft.database.sqlite.SQLite;
@@ -45,7 +46,20 @@ public class DatabaseManager {
                 ); break;
         }
 
-        database.connect();
+        try {
+            database.connect();
+        } catch (Exception e) {
+            if (databaseType != DatabaseType.SQLITE) {
+                Nascraft.getInstance().getLogger().severe(
+                    "\u001B[31m  \u2718\u001B[0m Failed to connect to " + databaseType + " database: " + e.getMessage());
+                Nascraft.getInstance().getLogger().severe(
+                    "\u001B[33m  \u26A0\u001B[0m Falling back to SQLite. Check your database settings in config.yml.");
+                database = SQLite.getInstance();
+                database.connect();
+            } else {
+                throw e;
+            }
+        }
     }
 
     public Database getDatabase() {

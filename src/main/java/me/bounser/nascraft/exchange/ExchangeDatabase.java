@@ -1,10 +1,15 @@
 package me.bounser.nascraft.exchange;
 
 import me.bounser.nascraft.Nascraft;
+import me.bounser.nascraft.exchange.clob.ExchangeOrder;
+import me.bounser.nascraft.exchange.clob.OrderSide;
+import me.bounser.nascraft.exchange.clob.OrderStatus;
+import me.bounser.nascraft.exchange.clob.OrderType;
 import me.bounser.nascraft.exchange.company.Company;
 import me.bounser.nascraft.exchange.company.CompanyStatus;
 import me.bounser.nascraft.exchange.shares.ShareRegistry;
 
+import java.math.BigDecimal;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Level;
@@ -222,6 +227,96 @@ public class ExchangeDatabase {
             }
         } catch (SQLException e) {
             Nascraft.getInstance().getLogger().warning("loadPositions error: " + e.getMessage());
+        }
+        return out;
+    }
+
+    // ── Orders ────────────────────────────────────────────────────────────────
+
+    public void saveOrder(ExchangeOrder order) {
+        String sql = """
+            INSERT INTO exchange_orders
+              (id,owner_uuid,ticker,side,order_type,price,quantity,filled_qty,status,created_at,expires_at,updated_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+            ON DUPLICATE KEY UPDATE
+              filled_qty=VALUES(filled_qty), status=VALUES(status), updated_at=VALUES(updated_at)
+            """;
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, order.getOrderId().toString());
+            ps.setString(2, order.getOwnerUuid().toString());
+            ps.setString(3, order.getTickerSymbol());
+            ps.setString(4, order.getSide().name());
+            ps.setString(5, order.getType().name());
+            if (order.getPrice() != null) ps.setBigDecimal(6, order.getPrice());
+            else                          ps.setNull(6, Types.DECIMAL);
+            ps.setBigDecimal(7, order.getQuantity());
+            ps.setBigDecimal(8, order.getFilledQuantity());
+            ps.setString(9, order.getStatus().name());
+            ps.setLong(10, order.getCreatedAt());
+            ps.setLong(11, order.getExpiresAt());
+            ps.setLong(12, order.getUpdatedAt());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            Nascraft.getInstance().getLogger().warning("saveOrder error: " + e.getMessage());
+        }
+    }
+
+    public void updateOrderStatus(UUID orderId, OrderStatus status, BigDecimal filledQty) {
+        String sql = "UPDATE exchange_orders SET status=?, filled_qty=?, updated_at=? WHERE id=?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, status.name());
+            ps.setBigDecimal(2, filledQty);
+            ps.setLong(3, System.currentTimeMillis());
+            ps.setString(4, orderId.toString());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            Nascraft.getInstance().getLogger().warning("updateOrderStatus error: " + e.getMessage());
+        }
+    }
+
+    public List<ExchangeOrder> loadOpenOrders() {
+        List<ExchangeOrder> out = new ArrayList<>();
+        String sql = "SELECT * FROM exchange_orders WHERE status IN ('OPEN','PARTIALLY_FILLED') ORDER BY created_at ASC";
+        try (Statement st = connection.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) {
+                ExchangeOrder order = new ExchangeOrder(
+                        UUID.fromString(rs.getString("id")),
+                        UUID.fromString(rs.getString("owner_uuid")),
+                        rs.getString("ticker"),
+                        OrderSide.valueOf(rs.getString("side")),
+                        OrderType.valueOf(rs.getString("order_type")),
+                        rs.getBigDecimal("price"),   // null for MARKET
+                        rs.getBigDecimal("quantity"),
+                        rs.getLong("created_at"),
+                        rs.getLong("expires_at"));
+                order.restoreState(
+                        rs.getBigDecimal("filled_qty"),
+                        OrderStatus.valueOf(rs.getString("status")),
+                        rs.getLong("updated_at"));
+                out.add(order);
+            }
+        } catch (SQLException e) {
+            Nascraft.getInstance().getLogger().warning("loadOpenOrders error: " + e.getMessage());
+        }
+        return out;
+    }
+
+    // ── All Positions ─────────────────────────────────────────────────────────
+
+    public Map<UUID, Map<UUID, BigDecimal>> loadAllPositions() {
+        Map<UUID, Map<UUID, BigDecimal>> out = new LinkedHashMap<>();
+        String sql = "SELECT player_uuid, company_id, quantity FROM share_positions WHERE quantity > 0";
+        try (Statement st = connection.createStatement();
+             ResultSet rs = st.executeQuery(sql)) {
+            while (rs.next()) {
+                UUID player  = UUID.fromString(rs.getString("player_uuid"));
+                UUID company = UUID.fromString(rs.getString("company_id"));
+                BigDecimal qty = rs.getBigDecimal("quantity");
+                out.computeIfAbsent(player, k -> new LinkedHashMap<>()).put(company, qty);
+            }
+        } catch (SQLException e) {
+            Nascraft.getInstance().getLogger().warning("loadAllPositions error: " + e.getMessage());
         }
         return out;
     }

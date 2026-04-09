@@ -183,23 +183,29 @@ public class Config {
     }
 
     public String getHost() {
-        return config.getString("database.mysql.host");
+        // Support both old flat key (database.host) and new nested key (database.mysql.host)
+        String v = config.getString("database.mysql.host");
+        return (v != null) ? v : config.getString("database.host");
     }
 
     public int getPort() {
-        return config.getInt("database.mysql.port");
+        int v = config.getInt("database.mysql.port", 0);
+        return (v != 0) ? v : config.getInt("database.port", 3306);
     }
 
     public String getDatabase() {
-        return config.getString("database.mysql.database");
+        String v = config.getString("database.mysql.database");
+        return (v != null) ? v : config.getString("database.database");
     }
 
     public String getUser() {
-        return config.getString("database.mysql.user");
+        String v = config.getString("database.mysql.user");
+        return (v != null) ? v : config.getString("database.user");
     }
 
     public String getPassword() {
-        return config.getString("database.mysql.password");
+        String v = config.getString("database.mysql.password");
+        return (v != null) ? v : config.getString("database.password");
     }
 
     public int getDatabasePurgeDays() {

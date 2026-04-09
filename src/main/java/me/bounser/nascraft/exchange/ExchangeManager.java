@@ -3,7 +3,10 @@ package me.bounser.nascraft.exchange;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import me.bounser.nascraft.Nascraft;
+import me.bounser.nascraft.exchange.clob.ExchangeOrder;
 import me.bounser.nascraft.exchange.clob.MatchingEngine;
+import me.bounser.nascraft.exchange.clob.OrderStatus;
+import me.bounser.nascraft.exchange.clob.OrderType;
 import me.bounser.nascraft.exchange.company.Company;
 import me.bounser.nascraft.exchange.company.CompanyManager;
 import me.bounser.nascraft.exchange.dividends.DividendEngine;
@@ -14,11 +17,15 @@ import me.bounser.nascraft.exchange.regulatory.RegulatoryLog;
 import me.bounser.nascraft.exchange.shares.ShareRegistry;
 import me.bounser.nascraft.exchange.vault.CompanyVaultManager;
 import me.bounser.nascraft.config.Config;
+import org.bukkit.Bukkit;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
@@ -52,11 +59,43 @@ public class ExchangeManager {
             List<Company> companies = ExchangeDatabase.getInstance().loadAllCompanies();
             companies.forEach(CompanyManager.getInstance()::registerCompany);
 
+            // Restore share positions
+            Map<UUID, Map<UUID, BigDecimal>> allPositions = ExchangeDatabase.getInstance().loadAllPositions();
+            allPositions.forEach((playerUuid, companyMap) ->
+                companyMap.forEach((companyId, qty) ->
+                    ShareRegistry.getInstance().loadPosition(playerUuid, companyId, qty)));
+
+            // Restore open order books (companies must be loaded first)
+            List<ExchangeOrder> openOrders = ExchangeDatabase.getInstance().loadOpenOrders();
+            int restored = 0;
+            for (ExchangeOrder order : openOrders) {
+                if (order.isExpired()) {
+                    order.expire();
+                    final ExchangeOrder expiredOrder = order;
+                    Bukkit.getScheduler().runTaskAsynchronously(Nascraft.getInstance(), () -> {
+                        try { ExchangeDatabase.getInstance().updateOrderStatus(
+                                expiredOrder.getOrderId(), OrderStatus.EXPIRED, expiredOrder.getFilledQuantity()); }
+                        catch (IllegalStateException ignored) {}
+                    });
+                    continue;
+                }
+                if (order.getType() == OrderType.LIMIT) {
+                    MatchingEngine.getInstance().getOrCreateBook(order.getTickerSymbol()).addOrder(order);
+                }
+                OrderTracker.getInstance().track(order.getOwnerUuid(), order);
+                restored++;
+            }
+            Nascraft.getInstance().getLogger().info("[ExchangeManager] Restored " + restored + " open orders.");
+
             // Start integrity watchdog (every 5 s)
             IntegrityWatchdog.start();
 
-            // Wire fill listener: on every fill → write ledger entry
+            // Wire fill listener: execute economy/share transfers then write ledger entry
             MatchingEngine.getInstance().setFillListener(fill -> {
+                // 1. Execute the actual money + share transfer
+                FillExecutor.execute(fill);
+
+                // 2. Append to the immutable audit ledger
                 try {
                     Ledger.getInstance().record(
                             "EXCHANGE_FILL",

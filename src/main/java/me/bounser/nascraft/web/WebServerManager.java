@@ -10,6 +10,7 @@ import me.bounser.nascraft.managers.MoneyManager;
 import me.bounser.nascraft.market.MarketManager;
 import me.bounser.nascraft.portfolio.PortfoliosManager;
 import me.bounser.nascraft.web.controllers.AuthController;
+import me.bounser.nascraft.web.controllers.ExchangeController;
 import me.bounser.nascraft.web.controllers.MarketController;
 import me.bounser.nascraft.web.controllers.PlayerController;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -88,6 +89,7 @@ public class WebServerManager {
             MarketController.register(webServer, marketManager);
             AuthController.register(webServer, plugin, database, httpClient, gson, codesManager);
             PlayerController.register(webServer, plugin, marketManager, portfoliosManager, moneyManager);
+            ExchangeController.register(webServer);
 
         } catch (Exception e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to start web server: " + e.getMessage(), e);
