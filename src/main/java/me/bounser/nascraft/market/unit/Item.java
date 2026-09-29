@@ -13,6 +13,7 @@ import me.bounser.nascraft.api.events.BuyItemEvent;
 import me.bounser.nascraft.api.events.SellItemEvent;
 import me.bounser.nascraft.database.commands.resources.Trade;
 import me.bounser.nascraft.discord.DiscordLog;
+import me.bounser.nascraft.economy.EconomyEngine;
 import me.bounser.nascraft.formatter.Formatter;
 import me.bounser.nascraft.formatter.RoundUtils;
 import me.bounser.nascraft.managers.InventoryManager;
@@ -223,6 +224,8 @@ public class Item {
                         price.getValue()*(price.getBuyTaxMultiplier()-1)*amount*multiplier);
         }
 
+        EconomyEngine.recordTrade(this, true, worth, limitReached ? 0 : -amount*multiplier);
+
         Trade trade = new Trade(this, LocalDateTime.now(), worth, amount, true, false, uuid);
 
         DatabaseManager.get().getDatabase().saveTrade(trade);
@@ -269,6 +272,8 @@ public class Item {
                         -amount*multiplier,
                         price.getValue()*(price.getBuyTaxMultiplier()-1)*amount*multiplier);
         }
+
+        EconomyEngine.recordTrade(this, true, worth, limitReached ? 0 : -amount*multiplier);
 
         Trade trade = new Trade(this, LocalDateTime.now(), worth, amount, true, false, uuid);
 
@@ -349,6 +354,8 @@ public class Item {
 
         if (player != null && feedback) Lang.get().message(player, Message.SELL_MESSAGE, Formatter.format(currency, worth, Style.ROUND_BASIC), String.valueOf(amount), taggedAlias);
 
+        EconomyEngine.recordTrade(this, false, worth, limitReached ? 0 : amount*multiplier);
+
         Trade trade = new Trade(this, LocalDateTime.now(), worth, amount, false, false, uuid);
 
         DatabaseManager.get().getDatabase().saveTrade(trade);
@@ -402,6 +409,8 @@ public class Item {
 
         worth = RoundUtils.round(worth);
 
+        EconomyEngine.recordTrade(this, false, worth, limitReached ? 0 : amount*multiplier);
+
         Trade trade = new Trade(this, LocalDateTime.now(), worth, amount, false, false, uuid);
 
         DatabaseManager.get().getDatabase().saveTrade(trade);
@@ -420,11 +429,13 @@ public class Item {
     }
 
     public void ghostBuyItem(int amount) {
+        EconomyEngine.recordTrade(this, true, amount*price.getValue()*price.getBuyTaxMultiplier(), -amount);
         updateInternalValues(amount, amount*price.getValue(), -amount, price.getValue()*(price.getBuyTaxMultiplier()-1)*amount);
         MarketManager.getInstance().addOperation();
     }
 
     public void ghostSellItem(int amount) {
+        EconomyEngine.recordTrade(this, false, amount*price.getValue()*price.getSellTaxMultiplier(), amount);
         updateInternalValues(amount, amount*price.getValue(), amount, price.getValue()*(1-price.getSellTaxMultiplier())*amount);
         MarketManager.getInstance().addOperation();
     }

@@ -1,5 +1,6 @@
 package me.bounser.nascraft.inventorygui.Portfolio;
 
+import me.bounser.nascraft.economy.EconomyEngine;
 import me.bounser.nascraft.Nascraft;
 import me.bounser.nascraft.config.Config;
 import me.bounser.nascraft.config.lang.Lang;
@@ -156,7 +157,7 @@ public class DebtMenu implements MenuPage {
             double interest = 0;
 
             if (currentDebt != 0) {
-                interest = Math.max(currentDebt * config.getLoansDailyInterest(), config.getLoansMinimumInterest());
+                interest = Math.max(currentDebt * EconomyEngine.loanDailyRate(), config.getLoansMinimumInterest());
             }
 
             String infoLore = Lang.get().message(Message.PORTFOLIO_DEBT_INFO_LORE)
@@ -239,7 +240,7 @@ public class DebtMenu implements MenuPage {
             List<String> lore = new ArrayList<>();
             String getMaxLoan = Lang.get().message(Message.PORTFOLIO_DEBT_TAKE_ALL_LORE)
                     .replace("[AMOUNT]", Formatter.format(currency, amount, Style.ROUND_BASIC))
-                    .replace("[INTEREST]", String.valueOf(Formatter.roundToDecimals(config.getLoansDailyInterest()*100, 2)));
+                    .replace("[INTEREST]", String.valueOf(Formatter.roundToDecimals(EconomyEngine.loanDailyRate()*100, 2)));
 
             for (String line : getMaxLoan.split("\\n")) {
                 Component loreComponent = MiniMessage.miniMessage().deserialize(line);
@@ -262,7 +263,7 @@ public class DebtMenu implements MenuPage {
 
             List<String> lore = new ArrayList<>();
             String customString = Lang.get().message(Message.PORTFOLIO_DEBT_CUSTOM_LORE)
-                    .replace("[INTEREST]", String.valueOf(Formatter.roundToDecimals(config.getLoansDailyInterest()*100, 2)))
+                    .replace("[INTEREST]", String.valueOf(Formatter.roundToDecimals(EconomyEngine.loanDailyRate()*100, 2)))
                     .replace("[ADDITIONAL]", Formatter.format(currency, maxLoan-currentDebt, Style.ROUND_BASIC));
 
             for (String line : customString.split("\\n")) {

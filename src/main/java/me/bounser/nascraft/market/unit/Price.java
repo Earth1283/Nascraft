@@ -3,6 +3,8 @@ package me.bounser.nascraft.market.unit;
 import me.bounser.nascraft.config.Config;
 import me.bounser.nascraft.formatter.RoundUtils;
 
+import me.bounser.nascraft.economy.MarketModifiers;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -49,6 +51,9 @@ public class Price {
 
     private final float taxBuy;
     private final float taxSell;
+
+    // Volatility premium added to the spread by the economy engine (0 = off).
+    private volatile double extraSpread = 0;
 
     private double chartDayHigh;
     private double monthHigh;
@@ -100,13 +105,27 @@ public class Price {
 
     public double getValue() { return value; }
 
-    public double getBuyPrice() { return getProjectedCost(-1, taxBuy); }
+    public double getBuyPrice() { return getProjectedCost(-1, getBuyTaxMultiplier()); }
 
-    public double getSellPrice() { return getProjectedCost(1, taxSell); }
+    public double getSellPrice() { return getProjectedCost(1, getSellTaxMultiplier()); }
 
     public void setStock(float stock) {
         this.stock = stock;
         updateValue();
+    }
+
+    /** Economy-driven stock drift (reversion, spillovers, shocks). Bumps the sync version. */
+    public void adjustStock(double delta) {
+        if (delta == 0 || !Double.isFinite(delta)) return;
+        stock += (float) delta;
+        updateValue();
+        version++;
+    }
+
+    /** Stock change that moves the log price by {@code logChange} (0 when inelastic). */
+    public double stockForLogChange(double logChange) {
+        if (elasticity == 0) return 0;
+        return -logChange / (0.0005 * elasticity);
     }
 
     public long getVersion() { return version; }
@@ -326,7 +345,7 @@ public class Price {
 
     public void updateValue() {
 
-        value = (float) (initialValue * Math.exp(-0.0005 * elasticity * stock));
+        value = (float) (base() * Math.exp(-0.0005 * elasticity * stock));
         enforceLimits();
         updateLimits();
 
@@ -407,8 +426,9 @@ public class Price {
 
         double totalIntegral = 0.0;
 
-        double y1 = initialValue * Math.exp(-0.0005* elasticity * upperStockThreshold);
-        double y2 = initialValue * Math.exp(-0.0005* elasticity * lowerStockThreshold);
+        double base = base();
+        double y1 = base * Math.exp(-0.0005* elasticity * upperStockThreshold);
+        double y2 = base * Math.exp(-0.0005* elasticity * lowerStockThreshold);
 
         double segment1_end = Math.min(finalStock, upperStockThreshold);
         if (segment1_end > initialStock) {
@@ -435,14 +455,27 @@ public class Price {
 
         final double k = 0.0005 * elasticity;
 
-        double factor = initialValue / k;
+        double factor = base() / k;
         double expTerm1 = Math.exp(-k * x1);
         double expTerm2 = Math.exp(-k * x2);
         return factor * (expTerm1 - expTerm2);
     }
 
-    public float getBuyTaxMultiplier() { return taxBuy; }
-    public float getSellTaxMultiplier() { return taxSell; }
+    /** Effective buy multiplier after fiscal/monetary policy and the volatility spread. */
+    public float getBuyTaxMultiplier() { return MarketModifiers.effectiveBuy(taxBuy, taxSell, extraSpread); }
+
+    /** Effective sell multiplier after fiscal/monetary policy and the volatility spread. */
+    public float getSellTaxMultiplier() { return MarketModifiers.effectiveSell(taxBuy, taxSell, extraSpread); }
+
+    /** Configured multipliers, before any economy policy is applied. */
+    public float getBaseBuyTaxMultiplier() { return taxBuy; }
+    public float getBaseSellTaxMultiplier() { return taxSell; }
+
+    public double getExtraSpread() { return extraSpread; }
+    public void setExtraSpread(double extraSpread) { this.extraSpread = Math.max(0, extraSpread); }
+
+    /** Equilibrium (stock = 0) value in today's money: initial value times the price level. */
+    public double base() { return initialValue * MarketModifiers.priceLevel(); }
 
     public Item getItem() { return item; }
 
@@ -466,7 +499,7 @@ public class Price {
 
     public double getStockFromValue(double value) {
         if (elasticity == 0) return 0;
-        return (Math.log(value / initialValue) / (-0.0005 * elasticity));
+        return (Math.log(value / base()) / (-0.0005 * elasticity));
     }
 
 }

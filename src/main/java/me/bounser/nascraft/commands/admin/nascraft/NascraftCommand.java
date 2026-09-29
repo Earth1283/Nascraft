@@ -169,6 +169,9 @@ public class NascraftCommand extends Command {
 
                 Lang.get().reload();
 
+                if (me.bounser.nascraft.economy.EconomyEngine.get() != null)
+                    me.bounser.nascraft.economy.EconomyEngine.get().reload();
+
                 sender.sendMessage(ChatColor.DARK_PURPLE + "[NC] " + ChatColor.GRAY + "Lang reloaded. Using: " + Config.getInstance().getSelectedLanguage());
 
                 sender.sendMessage(ChatColor.DARK_PURPLE + "[NC] " + ChatColor.GRAY + "Reloaded! " +

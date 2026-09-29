@@ -173,6 +173,15 @@ commands:
   sellhand:
     enabled: true
     alias: 'nsellhand'
+  # Economy overview (/economy). Admin subcommands need nascraft.economy.admin.
+  # The engine itself is configured in economy.yml.
+  economy:
+    enabled: true
+    alias: 'eco'
+  # Gives players a one-time code to sign in to the web dashboard.
+  # The command name itself is set by website.login-command.
+  webcode:
+    enabled: true
   sell-menu:
     enabled: true
     alias: 'sell'

@@ -1,5 +1,8 @@
 package me.bounser.nascraft.placeholderapi;
 
+import me.bounser.nascraft.commands.economy.EconomyCommand;
+import me.bounser.nascraft.economy.EconomyEngine;
+import me.bounser.nascraft.economy.MacroSnapshot;
 import me.bounser.nascraft.Nascraft;
 import me.bounser.nascraft.chart.cpi.CPIInstant;
 import me.bounser.nascraft.config.Config;
@@ -69,7 +72,7 @@ public class PAPIExpansion extends PlaceholderExpansion {
 
                     List<CPIInstant> cpiHistory = DatabaseManager.get().getDatabase().getCPIHistory();
 
-                    int index = cpiHistory.size()-7;
+                    int index = cpiHistory.size()-30;
 
                     if (index < 0) index = cpiHistory.size() - 1;
 
@@ -97,6 +100,9 @@ public class PAPIExpansion extends PlaceholderExpansion {
 
                 } else return cpiWeek;
 
+            case "eco":
+                return economyPlaceholder(dividedParams.length == 2 ? dividedParams[1].toLowerCase() : "");
+
             case "linked":
                 return String.valueOf(LinkManager.getInstance().getUserDiscordID(player.getUniqueId()) != null);
 
@@ -113,7 +119,7 @@ public class PAPIExpansion extends PlaceholderExpansion {
                 return String.valueOf(Formatter.roundToDecimals(debt, CurrenciesManager.getInstance().getDefaultCurrency().getDecimalPrecission()));
 
             case "interest":
-                double interest = DebtManager.getInstance().getDebtOfPlayer(player.getUniqueId()) * Config.getInstance().getLoansDailyInterest();
+                double interest = DebtManager.getInstance().getDebtOfPlayer(player.getUniqueId()) * EconomyEngine.loanDailyRate();
                 return String.valueOf(Formatter.roundToDecimals(interest, CurrenciesManager.getInstance().getDefaultCurrency().getDecimalPrecission()));
 
             case "discordid":
@@ -179,6 +185,40 @@ public class PAPIExpansion extends PlaceholderExpansion {
         }
 
         return "0";
+    }
+
+    /**
+     * {@code %nascraft_eco_<metric>%}. Reads the engine's cached snapshot: no I/O.
+     */
+    private String economyPlaceholder(String metric) {
+        EconomyEngine engine = EconomyEngine.get();
+        if (engine == null) return "";
+        MacroSnapshot s = engine.latest();
+        int dp = CurrenciesManager.getInstance().getDefaultCurrency().getDecimalPrecission();
+        return switch (metric) {
+            case "cpi" -> String.valueOf(Formatter.roundToDecimals(s.cpi(), 2));
+            case "inflation" -> String.valueOf(Formatter.roundToDecimals(s.inflation() * 100, 3));
+            case "rate" -> String.valueOf(Formatter.roundToDecimals(EconomyEngine.loanDailyRate() * 100, 3));
+            case "gdp" -> String.valueOf(Formatter.roundToDecimals(s.gdp(), dp));
+            case "realgdp" -> String.valueOf(Formatter.roundToDecimals(s.realGdp(), dp));
+            case "moneysupply" -> String.valueOf(Formatter.roundToDecimals(s.moneySupply(), dp));
+            case "velocity" -> String.valueOf(Formatter.roundToDecimals(s.velocity(), 3));
+            case "gap" -> String.valueOf(Formatter.roundToDecimals(s.outputGap() * 100, 1));
+            case "phase" -> EconomyCommand.phaseName(s.phase());
+            case "recession" -> String.valueOf(s.recession());
+            case "liquidity" -> String.valueOf(Formatter.roundToDecimals(s.liquidity(), 3));
+            case "taxscale" -> String.valueOf(Formatter.roundToDecimals(s.taxScale(), 3));
+            case "pricelevel" -> String.valueOf(Formatter.roundToDecimals(s.priceLevel(), 3));
+            case "treasury" -> String.valueOf(Formatter.roundToDecimals(engine.treasury(), dp));
+            case "ubi" -> String.valueOf(Formatter.roundToDecimals(s.ubiPerCapita(), dp));
+            case "gini" -> String.valueOf(Formatter.roundToDecimals(s.gini(), 3));
+            case "debt" -> String.valueOf(Formatter.roundToDecimals(s.outstandingDebt(), dp));
+            case "taxes" -> String.valueOf(Formatter.roundToDecimals(s.taxes(), dp));
+            case "trades" -> String.valueOf(s.trades());
+            case "issuance" -> String.valueOf(Formatter.roundToDecimals(s.netIssuance(), dp));
+            case "shocks" -> String.valueOf(engine.activeShocks().size());
+            default -> "Invalid metric";
+        };
     }
 
     public Item getItemFromString(String itemIdentifier, Player player) {

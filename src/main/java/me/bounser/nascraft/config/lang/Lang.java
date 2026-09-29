@@ -34,6 +34,7 @@ public class Lang {
         }
 
         lang = YamlConfiguration.loadConfiguration(language);
+        applyBundledDefaults();
 
         this.miniMessage = MiniMessage.miniMessage();
         Formatter.setSeparator(Separator.valueOf(message(Message.SEPARATOR).toUpperCase()));
@@ -49,7 +50,24 @@ public class Lang {
         }
 
         lang = YamlConfiguration.loadConfiguration(language);
+        applyBundledDefaults();
         Formatter.setSeparator(Separator.valueOf(message(Message.SEPARATOR).toUpperCase()));
+    }
+
+    /**
+     * Lang files copied to the data folder by an older version lack newer keys.
+     * Fall back to the bundled file for the same language (or en_US) for those.
+     */
+    private void applyBundledDefaults() {
+        String selected = Config.getInstance().getSelectedLanguage();
+        InputStream in = Nascraft.getInstance().getResource("langs/" + selected + ".yml");
+        if (in == null) in = Nascraft.getInstance().getResource("langs/en_US.yml");
+        if (in == null) return;
+        try (Reader reader = new InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8)) {
+            lang.setDefaults(YamlConfiguration.loadConfiguration(reader));
+        } catch (IOException e) {
+            Nascraft.getInstance().getLogger().warning("Could not load bundled lang defaults: " + e.getMessage());
+        }
     }
 
     private void saveResourceIfNotExists(String resourcePath) {
