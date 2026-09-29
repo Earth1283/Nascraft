@@ -11,6 +11,7 @@ import me.bounser.nascraft.market.resources.Category;
 import me.bounser.nascraft.market.unit.Item;
 import me.bounser.nascraft.config.Config;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 
@@ -27,15 +28,24 @@ public class MarketManager {
 
     /** Item list that invalidates the cached parent view on any structural change. */
     private final class TrackedItemList extends ArrayList<Item> {
-        @Override public boolean add(Item item) { parentsCache = null; return super.add(item); }
-        @Override public void add(int index, Item item) { parentsCache = null; super.add(index, item); }
-        @Override public boolean addAll(Collection<? extends Item> c) { parentsCache = null; return super.addAll(c); }
-        @Override public Item remove(int index) { parentsCache = null; return super.remove(index); }
-        @Override public boolean remove(Object o) { parentsCache = null; return super.remove(o); }
-        @Override public void clear() { parentsCache = null; super.clear(); }
+        @Override public boolean add(Item item) { invalidate(); return super.add(item); }
+        @Override public void add(int index, Item item) { invalidate(); super.add(index, item); }
+        @Override public boolean addAll(Collection<? extends Item> c) { invalidate(); return super.addAll(c); }
+        @Override public Item remove(int index) { invalidate(); return super.remove(index); }
+        @Override public boolean remove(Object o) { invalidate(); return super.remove(o); }
+        @Override public void clear() { invalidate(); super.clear(); }
     }
 
+    private void invalidate() { parentsCache = null; materialIndex = null; }
+
+    /** Call when an item's backing ItemStack changes so lookups are rebuilt. */
+    public void invalidateLookups() { invalidate(); }
+
     private volatile List<Item> parentsCache;
+
+    // Items grouped by material, so ItemStack lookups only compare candidates of
+    // the same type instead of cloning + NBT-stripping every market item.
+    private volatile Map<Material, List<Item>> materialIndex;
 
     private final List<Item> items = new TrackedItemList();
     private final HashMap<String, Item> identifiers = new HashMap<>();
@@ -153,9 +163,30 @@ public class MarketManager {
         setupItems();
     }
 
-    public Item getItem(ItemStack itemStack) {
-        for (Item item : items) if (isSimilarEnough(itemStack, item.getItemStack())) return item;
+    private Map<Material, List<Item>> materialIndex() {
+        Map<Material, List<Item>> index = materialIndex;
+        if (index != null) return index;
+
+        index = new EnumMap<>(Material.class);
+        for (Item item : items)
+            index.computeIfAbsent(item.peekItemStack().getType(), k -> new ArrayList<>(2)).add(item);
+
+        return materialIndex = index;
+    }
+
+    private Item findItem(ItemStack itemStack, boolean parentsOnly) {
+        if (itemStack == null) return null;
+        List<Item> candidates = materialIndex().get(itemStack.getType());
+        if (candidates == null) return null;
+        for (Item item : candidates) {
+            if (parentsOnly && !item.isParent()) continue;
+            if (isSimilarEnough(itemStack, item.peekItemStack())) return item;
+        }
         return null;
+    }
+
+    public Item getItem(ItemStack itemStack) {
+        return findItem(itemStack, false);
     }
 
     public Item getItem(String identifier) {
@@ -207,19 +238,11 @@ public class MarketManager {
     public boolean getActive() { return active; }
 
     public boolean isAValidItem(ItemStack itemStack) {
-
-        for (Item item : items)
-            if (isSimilarEnough(item.getItemStack(), itemStack)) return true;
-
-        return false;
+        return findItem(itemStack, false) != null;
     }
 
     public boolean isAValidParentItem(ItemStack itemStack) {
-
-        for (Item item : getAllParentItems())
-            if (isSimilarEnough(item.getItemStack(), itemStack)) return true;
-
-        return false;
+        return findItem(itemStack, true) != null;
     }
 
     /**
@@ -242,6 +265,10 @@ public class MarketManager {
         if (itemStack1 == null || itemStack2 == null) return false;
 
         if (!itemStack1.getType().equals(itemStack2.getType())) return false;
+
+        // isSimilar ignores stack size and never mutates, so no clones are needed
+        // unless NBT keys must be stripped first.
+        if (ignoredKeys.isEmpty()) return itemStack1.isSimilar(itemStack2);
 
         ItemStack itemStackWithoutFlags1 = itemStack1.clone();
         ItemStack itemStackWithoutFlags2 = itemStack2.clone();
@@ -374,6 +401,8 @@ public class MarketManager {
                 numOfItems++;
             }
         }
+
+        if (numOfItems == 0) return 100;
 
         return (index/numOfItems)*100;
     }

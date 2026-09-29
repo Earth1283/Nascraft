@@ -113,6 +113,10 @@ public interface Database {
     void saveOrUpdateName(UUID uuid, String name);
 
     void updateBalance(UUID uuid);
+
+    default void updateBalances(Collection<UUID> uuids) {
+        for (UUID uuid : uuids) updateBalance(uuid);
+    }
     Map<Integer, Double> getMoneySupplyHistory();
 
     void saveDiscordLink(UUID uuid, String userid, String nickname);

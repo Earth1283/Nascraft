@@ -215,12 +215,12 @@ public class Item {
                 parent.updateInternalValues(amount,
                         amount*price.getValue(),
                         -amount*multiplier,
-                        price.getValue()*(1-price.getBuyTaxMultiplier())*amount*multiplier);
+                        price.getValue()*(price.getBuyTaxMultiplier()-1)*amount*multiplier);
             else
                 updateInternalValues(amount,
                         amount*price.getValue(),
                         -amount*multiplier,
-                        price.getValue()*(1-price.getBuyTaxMultiplier())*amount*multiplier);
+                        price.getValue()*(price.getBuyTaxMultiplier()-1)*amount*multiplier);
         }
 
         Trade trade = new Trade(this, LocalDateTime.now(), worth, amount, true, false, uuid);
@@ -262,12 +262,12 @@ public class Item {
                 parent.updateInternalValues(amount,
                         amount*price.getValue(),
                         -amount*multiplier,
-                        price.getValue()*(1-price.getBuyTaxMultiplier())*amount*multiplier);
+                        price.getValue()*(price.getBuyTaxMultiplier()-1)*amount*multiplier);
             else
                 updateInternalValues(amount,
                         amount*price.getValue(),
                         -amount*multiplier,
-                        price.getValue()*(1-price.getBuyTaxMultiplier())*amount*multiplier);
+                        price.getValue()*(price.getBuyTaxMultiplier()-1)*amount*multiplier);
         }
 
         Trade trade = new Trade(this, LocalDateTime.now(), worth, amount, true, false, uuid);
@@ -335,12 +335,12 @@ public class Item {
                 parent.updateInternalValues(amount,
                         amount*price.getValue(),
                         amount*multiplier,
-                        price.getValue()*(1-price.getBuyTaxMultiplier())*amount*multiplier);
+                        price.getValue()*(1-price.getSellTaxMultiplier())*amount*multiplier);
             else
                 updateInternalValues(amount,
                         amount*price.getValue(),
                         amount*multiplier,
-                        price.getValue()*(1-price.getBuyTaxMultiplier())*amount*multiplier);
+                        price.getValue()*(1-price.getSellTaxMultiplier())*amount*multiplier);
         }
 
         MoneyManager.getInstance().deposit(offlinePlayer, currency, worth, price.getSellTaxMultiplier());
@@ -392,12 +392,12 @@ public class Item {
                 parent.updateInternalValues(amount,
                         amount*price.getValue(),
                         amount*multiplier,
-                        price.getValue()*(1-price.getBuyTaxMultiplier())*amount*multiplier);
+                        price.getValue()*(1-price.getSellTaxMultiplier())*amount*multiplier);
             else
                 updateInternalValues(amount,
                         amount*price.getValue(),
                         amount*multiplier,
-                        price.getValue()*(1-price.getBuyTaxMultiplier())*amount*multiplier);
+                        price.getValue()*(1-price.getSellTaxMultiplier())*amount*multiplier);
         }
 
         worth = RoundUtils.round(worth);
@@ -420,12 +420,12 @@ public class Item {
     }
 
     public void ghostBuyItem(int amount) {
-        updateInternalValues(-amount, amount, -amount,price.getValue()*price.getBuyTaxMultiplier());
+        updateInternalValues(amount, amount*price.getValue(), -amount, price.getValue()*(price.getBuyTaxMultiplier()-1)*amount);
         MarketManager.getInstance().addOperation();
     }
 
     public void ghostSellItem(int amount) {
-        updateInternalValues(amount, amount, amount, price.getValue()*price.getSellTaxMultiplier());
+        updateInternalValues(amount, amount*price.getValue(), amount, price.getValue()*(1-price.getSellTaxMultiplier())*amount);
         MarketManager.getInstance().addOperation();
     }
 
@@ -515,13 +515,19 @@ public class Item {
 
     public ItemStack getItemStack() { return itemStack.clone(); }
 
+    /** The backing stack without a defensive copy. Callers must not mutate it. */
+    public ItemStack peekItemStack() { return itemStack; }
+
     public ItemStack getItemStack(int quantity) {
         ItemStack clonedItemStack = itemStack.clone();
         clonedItemStack.setAmount(quantity);
         return clonedItemStack;
     }
 
-    public void setItemStack(ItemStack itemStack) { this.itemStack = itemStack; }
+    public void setItemStack(ItemStack itemStack) {
+        this.itemStack = itemStack;
+        MarketManager.getInstance().invalidateLookups();
+    }
 
     public BufferedImage getIcon() { return icon; }
 

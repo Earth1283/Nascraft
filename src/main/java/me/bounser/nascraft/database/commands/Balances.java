@@ -104,7 +104,8 @@ public class Balances {
                 String sqlInsertSupply = "INSERT INTO money_supply (day, supply) VALUES (?, ?);";
                 try (PreparedStatement prepInsertSupply = connection.prepareStatement(sqlInsertSupply)) {
                     prepInsertSupply.setInt(1, today);
-                    prepInsertSupply.setDouble(2, balanceDifference);
+                    // Supply is cumulative: a new day starts from the last known level.
+                    prepInsertSupply.setDouble(2, currentSupply + balanceDifference);
                     prepInsertSupply.executeUpdate();
                 }
             }

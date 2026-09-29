@@ -24,11 +24,20 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 public abstract class BaseDatabase implements Database {
 
     protected HikariDataSource dataSource;
+
+    // Fire-and-forget writes (trade log, flows) are queued here so callers on
+    // the main/region thread never block on JDBC. A single thread keeps writes
+    // in submission order, which also suits SQLite's single-writer model.
+    private volatile ExecutorService writer;
 
     // Configure the Hikari pool (JDBC URL, driver, credentials, pool size).
     protected abstract void configureHikari(HikariConfig config);
@@ -54,14 +63,55 @@ public abstract class BaseDatabase implements Database {
         }
 
         createTables();
+
+        writer = Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "Nascraft-DB-Writer");
+            t.setDaemon(true);
+            return t;
+        });
     }
 
     @Override
     public void disconnect() {
         try {
+            flushWrites();
             saveEverything();
         } finally {
             close();
+        }
+    }
+
+    /** Queues a write off the calling thread. Runs inline if the queue is unavailable. */
+    protected void writeAsync(String context, SqlConsumer action) {
+        ExecutorService w = writer;
+        if (w != null) {
+            try {
+                w.execute(() -> {
+                    try {
+                        withConnection(action);
+                    } catch (RuntimeException e) {
+                        Nascraft.getInstance().getLogger().warning("Async write failed (" + context + "): " + e.getMessage());
+                    }
+                });
+                return;
+            } catch (RejectedExecutionException ignored) {
+                // Shutting down: fall through and write synchronously.
+            }
+        }
+        withConnection(action);
+    }
+
+    /** Drains queued writes. Called on shutdown before the pool closes. */
+    public void flushWrites() {
+        ExecutorService w = writer;
+        if (w == null) return;
+        writer = null;
+        w.shutdown();
+        try {
+            if (!w.awaitTermination(15, TimeUnit.SECONDS))
+                Nascraft.getInstance().getLogger().warning("Timed out draining queued database writes.");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -311,7 +361,7 @@ public abstract class BaseDatabase implements Database {
 
     @Override
     public void saveTrade(Trade trade) {
-        withConnection(c -> TradesLog.saveTrade(c, trade));
+        writeAsync("saveTrade", c -> TradesLog.saveTrade(c, trade));
     }
 
     @Override
@@ -496,7 +546,7 @@ public abstract class BaseDatabase implements Database {
 
     @Override
     public void addTransaction(double newFlow, double effectiveTaxes) {
-        withConnection(c -> Statistics.addTransaction(c, newFlow, effectiveTaxes));
+        writeAsync("addTransaction", c -> Statistics.addTransaction(c, newFlow, effectiveTaxes));
     }
 
     @Override
@@ -588,6 +638,21 @@ public abstract class BaseDatabase implements Database {
     @Override
     public void updateBalance(UUID uuid) {
         withConnection(c -> Balances.updateBalance(c, uuid));
+    }
+
+    @Override
+    public void updateBalances(java.util.Collection<UUID> uuids) {
+        if (uuids.isEmpty()) return;
+        // One connection + transaction for the whole batch instead of one per player.
+        withTransaction(c -> {
+            for (UUID uuid : uuids) {
+                try {
+                    Balances.updateBalance(c, uuid);
+                } catch (RuntimeException e) {
+                    Nascraft.getInstance().getLogger().warning("Balance update failed for " + uuid + ": " + e.getMessage());
+                }
+            }
+        });
     }
 
     @Override

@@ -77,9 +77,11 @@ public class TasksManager {
                 for (GuiWallInstance instance : GuiWallManager.getInstance().getActiveInstances()) {
 
                     if (instance.getLayout().getName().equals("Nascraft"))
-                        for (Player player : Bukkit.getOnlinePlayers())
-                            if (instance.getInteraction(player) != null)
-                                LayoutModifier.getInstance().updateMainPage(instance.getInteraction(player).getComponentTree(), true, player);
+                        for (Player player : Bukkit.getOnlinePlayers()) {
+                            var interaction = instance.getInteraction(player);
+                            if (interaction != null)
+                                LayoutModifier.getInstance().updateMainPage(interaction.getComponentTree(), true, player);
+                        }
 
                 }
 
@@ -137,8 +139,9 @@ public class TasksManager {
 
             PortfoliosManager.getInstance().savePortfoliosWorthOfOnlinePlayers();
 
-            for (Player player : Bukkit.getOnlinePlayers())
-                DatabaseManager.get().getDatabase().updateBalance(player.getUniqueId());
+            java.util.List<java.util.UUID> online = new java.util.ArrayList<>();
+            for (Player player : Bukkit.getOnlinePlayers()) online.add(player.getUniqueId());
+            DatabaseManager.get().getDatabase().updateBalances(online);
 
         }, 60L * 5 * ticksPerSecond, 60L * 5 * ticksPerSecond); // 5 min
     }
