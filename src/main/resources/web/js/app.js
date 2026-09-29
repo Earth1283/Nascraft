@@ -1,5 +1,5 @@
 import { h, mount, clear } from './dom.js';
-import { t, pickLanguage, loadLanguage, setCurrency, LANGUAGE_NAMES } from './i18n.js';
+import { t, pickLanguage, loadLanguage, setCurrency, languageName } from './i18n.js';
 import * as api from './api.js';
 
 const views = {
@@ -208,7 +208,7 @@ function languagePicker(lang) {
   const langs = state.config.languages;
   if (langs.length < 2) return null;
   const sel = h('select', { class: 'lang', 'aria-label': t('language.label') },
-    langs.map(l => h('option', { value: l, selected: l === lang }, LANGUAGE_NAMES[l] || l)));
+    langs.map(l => h('option', { value: l, selected: l === lang }, languageName(l))));
   sel.addEventListener('change', async () => {
     await loadLanguage(sel.value);
     buildChrome(sel.value);

@@ -316,6 +316,9 @@ website:
   # Bundled: en, es, zh_CN, de, fr, pt_BR, ru
   default-language: "en"
   # Languages offered in the language picker. Empty = all bundled ones.
+  # To add your own, turn on custom-assets, copy web/locales/en.json to
+  # plugins/Nascraft/web/locales/<code>.json (e.g. pl.json), translate it and
+  # list the code here. Codes without a locale file are left out.
   languages: []
   # Serve files from plugins/Nascraft/web/ before the bundled ones, so you can
   # restyle or translate the site without rebuilding the plugin. Default: false.

@@ -51,9 +51,15 @@ public final class WebApi {
     private volatile WebSettings settings;
     private final TtlCache cache = new TtlCache(2048);
 
+    private volatile java.util.function.Predicate<String> localeAvailable = code -> true;
+
     public WebApi(Nascraft plugin, WebSettings settings) {
         this.plugin = plugin;
         this.settings = settings;
+    }
+
+    public void setLocaleAvailability(java.util.function.Predicate<String> localeAvailable) {
+        this.localeAvailable = localeAvailable;
     }
 
     public void setSettings(WebSettings settings) {
@@ -78,9 +84,11 @@ public final class WebApi {
                 .f("defaultMode", s.defaultMode)
                 .f("lockMode", s.lockMode)
                 .f("defaultTheme", s.defaultTheme)
-                .f("defaultLanguage", s.defaultLanguage);
+                .f("defaultLanguage", localeAvailable.test(s.defaultLanguage) ? s.defaultLanguage : "en");
+            List<String> languages = s.languages.stream().filter(localeAvailable).toList();
+            if (languages.isEmpty()) languages = List.of("en");
             j.name("languages").arr();
-            for (String l : s.languages) j.val(l);
+            for (String l : languages) j.val(l);
             j.endArr();
             j.name("pages").obj()
                 .f("market", s.pageMarket).f("economy", s.pageEconomy && EconomyEngine.active())

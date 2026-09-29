@@ -41,6 +41,8 @@ public final class StaticAssets {
         return files.get("/index.html");
     }
 
+    public boolean has(String path) { return files.containsKey(path); }
+
     public static boolean isShell(String path, Payload p) {
         return path.equals("/") || path.equals("/index.html") || p.contentType().startsWith("text/html");
     }

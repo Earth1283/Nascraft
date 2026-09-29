@@ -94,8 +94,8 @@ class WebPrimitivesTest {
                 accent: "red"
                 default-mode: PRO
                 default-theme: purple
-                default-language: xx
-                languages: [es, klingon, ru]
+                default-language: "../x"
+                languages: [es, klingon, ru, pl, "../etc"]
                 public-url: "https://market.example.net///"
                 login-code:
                   length: 2
@@ -106,7 +106,7 @@ class WebPrimitivesTest {
         assertEquals("pro", s.defaultMode);
         assertEquals("system", s.defaultTheme);
         assertEquals("en", s.defaultLanguage);
-        assertEquals(java.util.List.of("es", "ru"), s.languages);
+        assertEquals(java.util.List.of("es", "ru", "pl"), s.languages);
         assertEquals("https://market.example.net", s.publicUrl);
         assertEquals(6, s.codeLength);
         assertFalse(s.enabled);

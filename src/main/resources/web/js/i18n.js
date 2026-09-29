@@ -5,9 +5,15 @@ let currency = { format: '[AMOUNT]', decimals: 2 };
 const nf = new Map();
 
 const BCP47 = { en: 'en', es: 'es', zh_CN: 'zh-CN', de: 'de', fr: 'fr', pt_BR: 'pt-BR', ru: 'ru' };
-export const LANGUAGE_NAMES = {
+const LANGUAGE_NAMES = {
   en: 'English', es: 'Español', zh_CN: '简体中文', de: 'Deutsch', fr: 'Français', pt_BR: 'Português (Brasil)', ru: 'Русский',
 };
+
+export function languageName(code) {
+  if (LANGUAGE_NAMES[code]) return LANGUAGE_NAMES[code];
+  const tag = code.replace('_', '-');
+  try { return new Intl.DisplayNames([tag], { type: 'language' }).of(tag) || code; } catch { return code; }
+}
 
 export function pickLanguage(available, def) {
   let saved = null;
@@ -28,7 +34,7 @@ export async function loadLanguage(lang) {
   const [d, f] = await Promise.all([get(lang), lang === 'en' ? Promise.resolve(null) : get('en')]);
   dict = d;
   fallback = f || d;
-  locale = BCP47[lang] || 'en';
+  locale = BCP47[lang] || lang.replace('_', '-');
   nf.clear();
   document.documentElement.lang = locale;
   try { localStorage.setItem('nc.lang', lang); } catch {  }

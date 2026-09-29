@@ -58,6 +58,8 @@ public final class WebServer {
                 "THEME", settings.defaultTheme,
                 "LANG", settings.defaultLanguage.replace('_', '-')));
 
+        this.api.setLocaleAvailability(code -> assets.has("/locales/" + code + ".json"));
+
         this.live = new LiveHub(log, settings.liveIntervalSeconds, settings.maxLiveClients,
                 api::liveFrame, WebServer::economyVersion, this::economyBytes);
 

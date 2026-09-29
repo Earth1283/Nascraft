@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 public final class WebSettings {
     public static final List<String> BUNDLED_LANGUAGES = List.of("en", "es", "zh_CN", "de", "fr", "pt_BR", "ru");
     private static final Pattern HEX = Pattern.compile("^#[0-9a-fA-F]{6}$");
+    private static final Pattern LANGUAGE_CODE = Pattern.compile("^[a-z]{2,3}(_[A-Z]{2})?$");
 
     public final boolean enabled;
     public final String bindAddress;
@@ -62,8 +63,8 @@ public final class WebSettings {
         lockMode = c.getBoolean("lock-mode", false);
         defaultTheme = oneOf(c.getString("default-theme", "system"), "system", "light", "dark");
         String dl = c.getString("default-language", "en");
-        defaultLanguage = BUNDLED_LANGUAGES.contains(dl) ? dl : "en";
-        List<String> langs = c.getStringList("languages").stream().filter(BUNDLED_LANGUAGES::contains).toList();
+        defaultLanguage = dl != null && LANGUAGE_CODE.matcher(dl).matches() ? dl : "en";
+        List<String> langs = c.getStringList("languages").stream().filter(l -> LANGUAGE_CODE.matcher(l).matches()).distinct().toList();
         languages = langs.isEmpty() ? BUNDLED_LANGUAGES : langs;
         customAssets = c.getBoolean("custom-assets", false);
 

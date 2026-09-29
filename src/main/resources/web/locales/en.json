@@ -44,7 +44,6 @@
   "change.down": "down",
   "change.flat": "unchanged",
   "market.title": "Market",
-  "market.openLine": "{count} items trading. Prices move with every trade and update live.",
   "market.closedLine": "The market is closed. Prices are frozen until it reopens.",
   "market.cpiLink": "Price index {cpi}",
   "market.search": "Search items",
@@ -175,7 +174,6 @@
   "phase.slowdown.line": "Trade is {gap} above its usual level but cooling off.",
   "phase.contraction.line": "Trade is {gap} below its usual level and still falling.",
   "phase.recovery.line": "Trade is {gap} below its usual level and picking back up.",
-  "unit.perDay": "{v} a day",
   "gini.low": "Wealth is spread fairly evenly",
   "gini.moderate": "Some players are well ahead",
   "gini.high": "A few players hold most of the money",
@@ -315,5 +313,7 @@
   "login.empty": "Enter the code from the game chat.",
   "login.privacy": "No password is stored. Your login stays on this browser until you sign out.",
   "unit.perDaySuffix": "a day",
-  "phase.steady.line": "Trade is running at its usual level."
+  "phase.steady.line": "Trade is running at its usual level.",
+  "market.openLine.one": "{count} item trading. Its price moves with every trade and updates live.",
+  "market.openLine.other": "{count} items trading. Prices move with every trade and update live."
 }
