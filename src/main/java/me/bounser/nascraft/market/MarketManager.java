@@ -25,7 +25,19 @@ public class MarketManager {
 
     private static final Logger LOGGER = Logger.getLogger("Nascraft");
 
-    private final List<Item> items = new ArrayList<>();
+    /** Item list that invalidates the cached parent view on any structural change. */
+    private final class TrackedItemList extends ArrayList<Item> {
+        @Override public boolean add(Item item) { parentsCache = null; return super.add(item); }
+        @Override public void add(int index, Item item) { parentsCache = null; super.add(index, item); }
+        @Override public boolean addAll(Collection<? extends Item> c) { parentsCache = null; return super.addAll(c); }
+        @Override public Item remove(int index) { parentsCache = null; return super.remove(index); }
+        @Override public boolean remove(Object o) { parentsCache = null; return super.remove(o); }
+        @Override public void clear() { parentsCache = null; super.clear(); }
+    }
+
+    private volatile List<Item> parentsCache;
+
+    private final List<Item> items = new TrackedItemList();
     private final HashMap<String, Item> identifiers = new HashMap<>();
     private List<Category> categories = new ArrayList<>();
 
@@ -135,6 +147,7 @@ public class MarketManager {
 
     public void reload() {
         items.clear();
+        identifiers.clear();
         categories.clear();
 
         setupItems();
@@ -146,8 +159,7 @@ public class MarketManager {
     }
 
     public Item getItem(String identifier) {
-        if (identifiers.containsKey(identifier)) return identifiers.get(identifier);
-        return null;
+        return identifiers.get(identifier);
     }
 
     public List<Category> getCategories() { return categories; }
@@ -174,7 +186,11 @@ public class MarketManager {
         return identifiers;
     }
 
+    /** Read-only snapshot, rebuilt only when the item list changes. */
     public List<Item> getAllParentItems() {
+
+        List<Item> cached = parentsCache;
+        if (cached != null) return cached;
 
         List<Item> parents = new ArrayList<>();
 
@@ -182,7 +198,7 @@ public class MarketManager {
             if (item.isParent()) parents.add(item);
         }
 
-        return parents;
+        return parentsCache = Collections.unmodifiableList(parents);
     }
 
     public void stop() { active = false; }
@@ -238,106 +254,30 @@ public class MarketManager {
         return itemStackWithoutFlags1.isSimilar(itemStackWithoutFlags2);
     }
 
-    public List<Item> getTopGainers(int quantity) {
-
-        List<Item> items = new ArrayList<>(MarketManager.getInstance().getAllParentItems());
-
-        List<Item> topGainers = new ArrayList<>();
-
-        for (int i = 1; i <= quantity ; i++) {
-
-            Item imax = items.get(0);
-            for (Item item : items) {
-
-                float variation = item.getPrice().getValueChangeLastHour();
-
-                if (variation != 0) {
-                    if (variation > imax.getPrice().getValueChangeLastHour()) {
-                        imax = item;
-                    }
-                }
-            }
-            items.remove(imax);
-
-            topGainers.add(imax);
-        }
-        return topGainers;
+    private List<Item> topBy(int quantity, Comparator<Item> order) {
+        List<Item> sorted = new ArrayList<>(getAllParentItems());
+        sorted.sort(order);
+        return new ArrayList<>(sorted.subList(0, Math.min(quantity, sorted.size())));
     }
 
-    public List<Item> getTopDippers(int quantity) {
+    // Each item's hourly change is computed once per call rather than once per comparison.
+    private List<Item> topByChange(int quantity, java.util.function.ToDoubleFunction<Float> key, boolean descending) {
+        List<Item> parents = getAllParentItems();
+        Map<Item, Float> change = new IdentityHashMap<>(parents.size() * 2);
+        for (Item item : parents) change.put(item, item.getPrice().getValueChangeLastHour());
 
-        List<Item> items = new ArrayList<>(MarketManager.getInstance().getAllParentItems());
-
-        List<Item> topDippers = new ArrayList<>();
-
-        for (int i = 1; i <= quantity ; i++) {
-
-            Item imax = items.get(0);
-            for (Item item : items) {
-
-                float variation = item.getPrice().getValueChangeLastHour();
-
-                if (variation != 0) {
-                    if (variation < imax.getPrice().getValueChangeLastHour()) {
-                        imax = item;
-                    }
-                }
-            }
-            items.remove(imax);
-
-            topDippers.add(imax);
-        }
-        return topDippers;
+        Comparator<Item> order = Comparator.comparingDouble(item -> key.applyAsDouble(change.get(item)));
+        return topBy(quantity, descending ? order.reversed() : order);
     }
 
-    public List<Item> getMostMoved(int quantity) {
+    public List<Item> getTopGainers(int quantity) { return topByChange(quantity, v -> v, true); }
 
-        List<Item> items = new ArrayList<>(MarketManager.getInstance().getAllParentItems());
+    public List<Item> getTopDippers(int quantity) { return topByChange(quantity, v -> v, false); }
 
-        List<Item> mostMoved = new ArrayList<>();
-
-        for (int i = 1; i <= quantity ; i++) {
-
-            Item imax = items.get(0);
-            for (Item item : items) {
-
-                float variation = item.getPrice().getValueChangeLastHour();
-
-                if (variation != 0) {
-                    if (Math.abs(variation) > Math.abs(imax.getPrice().getValueChangeLastHour())) {
-                        imax = item;
-                    }
-                }
-            }
-            items.remove(imax);
-
-            mostMoved.add(imax);
-        }
-        return mostMoved;
-    }
+    public List<Item> getMostMoved(int quantity) { return topByChange(quantity, v -> Math.abs(v), true); }
 
     public List<Item> getMostTraded(int quantity) {
-
-        List<Item> items = new ArrayList<>(MarketManager.getInstance().getAllParentItems());
-
-        List<Item> mostTraded = new ArrayList<>();
-
-        for (int i = 1; i <= quantity ; i++) {
-
-            Item imax = items.get(0);
-            for (Item item : items) {
-
-                if (item.getOperations() >= 1) {
-                    if (item.getOperations() > imax.getOperations()) {
-                        imax = item;
-                    }
-                }
-            }
-            items.remove(imax);
-
-            mostTraded.add(imax);
-        }
-        return mostTraded;
+        return topBy(quantity, Comparator.comparingInt(Item::getOperations).reversed());
     }
 
     public int getPositionByVolume(Item item) {

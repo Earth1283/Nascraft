@@ -132,6 +132,39 @@ public final class RedisManager {
         }
     }
 
+    /**
+     * Stamps every given item with a fresh global version and broadcasts its stock,
+     * using two pipelined round trips in total instead of two per item.
+     */
+    public void advanceAndPublish(java.util.Collection<Item> items) {
+        JedisPool p = pool;
+        if (p == null || items.isEmpty()) return;
+
+        try (var jedis = p.getResource()) {
+            java.util.List<Item> ordered = new java.util.ArrayList<>(items);
+            java.util.List<redis.clients.jedis.Response<Long>> versions = new java.util.ArrayList<>(ordered.size());
+
+            try (var pipe = jedis.pipelined()) {
+                for (Item item : ordered)
+                    versions.add(pipe.incr(VERSION_KEY_PREFIX + item.getIdentifier()));
+                pipe.sync();
+            }
+
+            try (var pipe = jedis.pipelined()) {
+                for (int i = 0; i < ordered.size(); i++) {
+                    long gv = versions.get(i).get();
+                    if (gv <= 0) continue;
+                    Item item = ordered.get(i);
+                    item.getPrice().setVersion(gv);
+                    pipe.publish(CHANNEL, new AssetUpdate(item.getIdentifier(), item.getPrice().getStock(), gv, serverId).toJson());
+                }
+                pipe.sync();
+            }
+        } catch (Exception e) {
+            logger.warning("[Redis] batch version/publish failed: " + e.getMessage());
+        }
+    }
+
     public boolean isElectedPrimary() { return electedPrimary; }
 
     private void startElection() {

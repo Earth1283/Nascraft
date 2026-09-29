@@ -55,9 +55,12 @@ public class TasksManager {
 
         FoliaScheduler.runAsyncTimer(Nascraft.getInstance(), () -> {
 
+            var parents = MarketManager.getInstance().getAllParentItems();
+            boolean noise = Config.getInstance().getPriceNoise();
+
             float allChanges = 0;
-            for (Item item : MarketManager.getInstance().getAllParentItems()) {
-                if (Config.getInstance().getPriceNoise())
+            for (Item item : parents) {
+                if (noise)
                     allChanges += item.getPrice().getChange();
 
                 item.lowerOperations();
@@ -65,7 +68,7 @@ public class TasksManager {
                 item.getPrice().addValueToShortTermStorage();
             }
 
-            MarketManager.getInstance().updateMarketChange1h(allChanges/MarketManager.getInstance().getAllParentItems().size());
+            MarketManager.getInstance().updateMarketChange1h(parents.isEmpty() ? 0 : allChanges/parents.size());
 
             if (AGUI != null &&
                 AGUI.isEnabled() &&
@@ -109,21 +112,14 @@ public class TasksManager {
 
             RedisManager redis = Nascraft.getInstance().getRedisManager();
 
-            for (Item item : MarketManager.getInstance().getAllParentItems()) {
-                if (Config.getInstance().getPriceNoise()) {
-                    item.getPrice().applyNoise();
+            if (!Config.getInstance().getPriceNoise()) return;
 
-                    // Cross-server: stamp + broadcast the new stock. Already on an
-                    // async thread here, so the Redis I/O is fine inline.
-                    if (redis != null && redis.isConnected()) {
-                        long gv = redis.nextGlobalVersion(item.getIdentifier());
-                        if (gv > 0) {
-                            item.getPrice().setVersion(gv);
-                            redis.publishAssetUpdate(item.getIdentifier(), item.getPrice().getStock(), gv);
-                        }
-                    }
-                }
-            }
+            var parents = MarketManager.getInstance().getAllParentItems();
+
+            for (Item item : parents) item.getPrice().applyNoise();
+
+            // Cross-server: stamp + broadcast the new stocks in one pipelined batch.
+            if (redis != null && redis.isConnected()) redis.advanceAndPublish(parents);
         }, (long) delay * ticksPerSecond, (long) Config.getInstance().getNoiseTime() *  ticksPerSecond);
     }
 
@@ -151,10 +147,12 @@ public class TasksManager {
 
         FoliaScheduler.runAsyncTimer(Nascraft.getInstance(), () -> {
 
+            LocalDateTime now = LocalDateTime.now();
+
             for (Item item : MarketManager.getInstance().getAllParentItems()) {
 
                 item.getItemStats().addInstant(new Instant(
-                        LocalDateTime.now(),
+                        now,
                         item.getPrice().getValue(),
                         item.getVolume()
                 ));
