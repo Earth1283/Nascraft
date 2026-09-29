@@ -102,8 +102,8 @@ public class MarketManager {
             BufferedImage image = ImagesManager.getInstance().getImage(identifier);
 
             if (image == null) {
-                LOGGER.warning("No image found for item: " + identifier);
-                continue;
+                LOGGER.info("No image yet for item: " + identifier + " (still tradeable; the icon loads once textures are available)");
+                image = ImagesManager.placeholder();
             }
 
             Item item = new Item(

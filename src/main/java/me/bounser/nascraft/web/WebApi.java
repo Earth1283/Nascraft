@@ -13,6 +13,7 @@ import me.bounser.nascraft.economy.EconomySettings;
 import me.bounser.nascraft.economy.MacroSnapshot;
 import me.bounser.nascraft.economy.Shock;
 import me.bounser.nascraft.managers.DebtManager;
+import me.bounser.nascraft.managers.ImagesManager;
 import me.bounser.nascraft.managers.MoneyManager;
 import me.bounser.nascraft.managers.currencies.CurrenciesManager;
 import me.bounser.nascraft.managers.currencies.Currency;
@@ -263,12 +264,14 @@ public final class WebApi {
 
     public Payload icon(String id) {
         Item item = MarketManager.getInstance().getItem(id);
-        if (item == null || item.getIcon() == null) return null;
-
+        if (item == null) return null;
+        BufferedImage img = ImagesManager.isPlaceholder(item.getIcon())
+                ? ImagesManager.getInstance().getImage(item.getIdentifier())
+                : item.getIcon();
+        if (ImagesManager.isPlaceholder(img)) return null;
         return cache.get("icon:" + id, 86_400_000L, () -> {
             try {
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
-                BufferedImage img = item.getIcon();
                 ImageIO.write(img, "png", out);
                 return Payload.of("image/png", out.toByteArray());
             } catch (IOException e) {
