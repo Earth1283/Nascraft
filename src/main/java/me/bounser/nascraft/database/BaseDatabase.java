@@ -182,9 +182,7 @@ public abstract class BaseDatabase implements Database {
     @Override
     public void saveEverything() {
         if (dataSource == null || dataSource.isClosed()) return;
-        for (Item item : MarketManager.getInstance().getAllParentItems()) {
-            withConnection(c -> ItemProperties.saveItem(c, item));
-        }
+        withConnection(c -> ItemProperties.saveItems(c, MarketManager.getInstance().getAllParentItems()));
     }
 
     public void purgeOldData() {

@@ -8,30 +8,59 @@ import me.bounser.nascraft.market.MarketManager;
 import me.bounser.nascraft.market.unit.Item;
 
 import java.sql.*;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 public class ItemProperties {
 
-    public static void saveItem(Connection connection, Item item) throws SQLException {
+    private static String upsertSql() {
         SqlDialect d = SqlDialects.current();
-        String sql = "INSERT INTO items (identifier, lastprice, lowest, highest, stock, taxes, version) VALUES (?, ?, ?, ?, ?, ?, ?)" +
-                     d.onConflictUpdate("identifier") +
-                     "lastprice = " + d.inserted("lastprice") + ", " +
-                     "lowest    = " + d.inserted("lowest") + ", " +
-                     "highest   = " + d.inserted("highest") + ", " +
-                     "stock     = " + d.inserted("stock") + ", " +
-                     "taxes     = " + d.inserted("taxes") + ", " +
-                     "version   = " + d.inserted("version");
-        try (PreparedStatement prep = connection.prepareStatement(sql)) {
-            prep.setString(1, item.getIdentifier());
-            prep.setDouble(2, item.getPrice().getValue());
-            prep.setDouble(3, item.getPrice().getHistoricalLow());
-            prep.setDouble(4, item.getPrice().getHistoricalHigh());
-            prep.setDouble(5, item.getPrice().getStock());
-            prep.setDouble(6, item.getCollectedTaxes());
-            prep.setLong(7, item.getPrice().getVersion());
+        return "INSERT INTO items (identifier, lastprice, lowest, highest, stock, taxes, version) VALUES (?, ?, ?, ?, ?, ?, ?)" +
+               d.onConflictUpdate("identifier") +
+               "lastprice = " + d.inserted("lastprice") + ", " +
+               "lowest    = " + d.inserted("lowest") + ", " +
+               "highest   = " + d.inserted("highest") + ", " +
+               "stock     = " + d.inserted("stock") + ", " +
+               "taxes     = " + d.inserted("taxes") + ", " +
+               "version   = " + d.inserted("version");
+    }
+
+    private static void bind(PreparedStatement prep, Item item) throws SQLException {
+        prep.setString(1, item.getIdentifier());
+        prep.setDouble(2, item.getPrice().getValue());
+        prep.setDouble(3, item.getPrice().getHistoricalLow());
+        prep.setDouble(4, item.getPrice().getHistoricalHigh());
+        prep.setDouble(5, item.getPrice().getStock());
+        prep.setDouble(6, item.getCollectedTaxes());
+        prep.setLong(7, item.getPrice().getVersion());
+    }
+
+    public static void saveItem(Connection connection, Item item) throws SQLException {
+        try (PreparedStatement prep = connection.prepareStatement(upsertSql())) {
+            bind(prep, item);
             prep.executeUpdate();
+        }
+    }
+
+    /** Upserts all items with one prepared statement in a single transaction. */
+    public static void saveItems(Connection connection, Collection<Item> items) throws SQLException {
+        if (items.isEmpty()) return;
+
+        boolean previousAutoCommit = connection.getAutoCommit();
+        connection.setAutoCommit(false);
+        try (PreparedStatement prep = connection.prepareStatement(upsertSql())) {
+            for (Item item : items) {
+                bind(prep, item);
+                prep.addBatch();
+            }
+            prep.executeBatch();
+            connection.commit();
+        } catch (SQLException e) {
+            try { connection.rollback(); } catch (SQLException ignored) { /* original error wins */ }
+            throw e;
+        } finally {
+            connection.setAutoCommit(previousAutoCommit);
         }
     }
 
