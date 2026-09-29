@@ -13,13 +13,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * One-time login codes and sessions. Pure logic; persistence goes through the
- * callbacks so this is testable without a database.
- */
 public final class Auth {
-
-    /** No 0/O, 1/I/L: codes are read off a Minecraft chat screen. */
     private static final char[] ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789".toCharArray();
 
     public record Code(UUID uuid, String name, long expires) {}
@@ -65,7 +59,6 @@ public final class Auth {
 
     public void setSettings(WebSettings settings) { this.settings = settings; }
 
-    /** Issues a fresh code for a player, invalidating their previous one. */
     public String issueCode(UUID uuid, String name, long now) {
         WebSettings s = settings;
         StringBuilder sb = new StringBuilder(s.codeLength);
@@ -77,7 +70,6 @@ public final class Auth {
         return code;
     }
 
-    /** Consumes a code. Returns the new session's raw token, or null if the code is invalid. */
     public String redeem(String rawCode, String device, String ip, long now) {
         if (rawCode == null) return null;
         String code = rawCode.trim().toUpperCase().replace("-", "").replace(" ", "");
@@ -98,7 +90,6 @@ public final class Auth {
         return token;
     }
 
-    /** Resolves a session token, checking expiry, idle timeout and bindings. */
     public Session resolve(String token, String device, String ip, long now) {
         if (token == null || token.isEmpty()) return null;
         String hash = sha256(token);
@@ -127,7 +118,6 @@ public final class Auth {
         return new Session(tokenHash, uuid, name, created, expires, device, ip);
     }
 
-    /** Drops expired codes and sessions. */
     public void sweep(long now) {
         codes.entrySet().removeIf(e -> {
             if (e.getValue().expires() >= now) return false;
@@ -160,11 +150,9 @@ public final class Auth {
         }
     }
 
-    /** A new random device id for the long-lived device cookie. */
     public String newDeviceId() {
         byte[] b = new byte[18];
         random.nextBytes(b);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(b);
     }
-
 }

@@ -10,7 +10,6 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class EconomyMathTest {
-
     private static final double EPS = 1e-9;
 
     @Test
@@ -55,9 +54,9 @@ class EconomyMathTest {
     @DisplayName("Taylor rule: on-target inflation and zero gap gives neutral + inflation")
     void taylor() {
         assertEquals(0.005, EconomyMath.taylorRate(0.004, 0.001, 0.001, 0.5, 0, 0.005), EPS);
-        // 0.1pp above target adds 1.5× the excess
+
         assertEquals(0.004 + 0.002 + 0.0005, EconomyMath.taylorRate(0.004, 0.002, 0.001, 0.5, 0, 0.005), EPS);
-        // negative gap lowers the rate
+
         assertTrue(EconomyMath.taylorRate(0.004, 0.001, 0.001, 0.5, -0.2, 0.005) < 0.005);
     }
 

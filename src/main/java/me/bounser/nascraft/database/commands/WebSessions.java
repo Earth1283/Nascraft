@@ -8,9 +8,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Persisted web logins. Only a hash of each token is ever stored. */
 public final class WebSessions {
-
     private WebSessions() {}
 
     public record Row(String tokenHash, String uuid, String name, long created, long expires, String device, String ip) {}

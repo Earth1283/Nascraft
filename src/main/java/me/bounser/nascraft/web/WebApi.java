@@ -44,12 +44,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-/**
- * Builds every JSON document the dashboard reads. Shared documents are built
- * once per cache period; per-player ones touch game state on the main thread.
- */
 public final class WebApi {
-
     private static final ZoneId ZONE = ZoneId.systemDefault();
 
     private final Nascraft plugin;
@@ -72,10 +67,6 @@ public final class WebApi {
     private static Currency currency() { return CurrenciesManager.getInstance().getDefaultCurrency(); }
 
     private static long epoch(LocalDateTime t) { return t.atZone(ZONE).toInstant().toEpochMilli(); }
-
-    // ------------------------------------------------------------------
-    // Config
-    // ------------------------------------------------------------------
 
     public Payload config() {
         return cache.get("config", 60_000, () -> Payload.json(JsonOut.build(j -> {
@@ -112,10 +103,6 @@ public final class WebApi {
         }
         j.end();
     }
-
-    // ------------------------------------------------------------------
-    // Market
-    // ------------------------------------------------------------------
 
     public Payload market() {
         return cache.get("market", shortTtl(), () -> Payload.json(JsonOut.build(j -> {
@@ -158,7 +145,6 @@ public final class WebApi {
         j.end();
     }
 
-    /** Compact price frame for the live stream: {id: [price, buy, sell, ch1h]}. */
     public byte[] liveFrame() {
         return JsonOut.build(j -> {
             j.obj().f("ts", System.currentTimeMillis());
@@ -252,7 +238,7 @@ public final class WebApi {
                     default -> db.getAllPrices(item);
                 };
                 for (Instant in : inst) {
-                    if (in.getLocalDateTime() == null) continue;
+                    if (in.getLocalDateTime() == null || in.getPrice() <= 0) continue;
                     times.add(new long[] { epoch(in.getLocalDateTime()) });
                     rows.add(new double[] { in.getPrice(), in.getVolume() });
                 }
@@ -270,7 +256,7 @@ public final class WebApi {
     public Payload icon(String id) {
         Item item = MarketManager.getInstance().getItem(id);
         if (item == null || item.getIcon() == null) return null;
-        // Icons never change while the server runs: cache for a day.
+
         return cache.get("icon:" + id, 86_400_000L, () -> {
             try {
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -306,10 +292,6 @@ public final class WebApi {
             }));
         });
     }
-
-    // ------------------------------------------------------------------
-    // Economy
-    // ------------------------------------------------------------------
 
     public Payload economy() {
         EconomyEngine engine = EconomyEngine.get();
@@ -417,10 +399,6 @@ public final class WebApi {
         j.endArr();
     }
 
-    // ------------------------------------------------------------------
-    // Analytics + leaderboard
-    // ------------------------------------------------------------------
-
     private BaseDatabase sql() {
         Database d = DatabaseManager.get().getDatabase();
         return d instanceof BaseDatabase b ? b : null;
@@ -506,7 +484,6 @@ public final class WebApi {
                 for (double[] h : d.hours()) j.arr().val(h[0]).val(h[1]).endArr();
                 j.endArr();
 
-                // Most volatile items right now (hourly σ of log returns).
                 List<Item> parents = new ArrayList<>(m.getAllParentItems());
                 Map<Item, Double> vol = new HashMap<>();
                 for (Item it : parents) {
@@ -525,7 +502,6 @@ public final class WebApi {
         });
     }
 
-    /** Wealth histogram in decade buckets (0–10, 10–100, …). */
     private static void histogram(JsonOut j, double[] wealth) throws IOException {
         int[] buckets = new int[10];
         for (double w : wealth) {
@@ -579,11 +555,6 @@ public final class WebApi {
         try { return UUID.fromString(s); } catch (RuntimeException e) { return null; }
     }
 
-    // ------------------------------------------------------------------
-    // Player
-    // ------------------------------------------------------------------
-
-    /** Runs {@code task} on the global thread and waits (bounded) for the result. */
     static <T> T onMain(Nascraft plugin, Supplier<T> task) throws Exception {
         CompletableFuture<T> f = new CompletableFuture<>();
         FoliaScheduler.runGlobal(plugin, () -> {
@@ -613,7 +584,7 @@ public final class WebApi {
         List<Trade> trades = DatabaseManager.get().getDatabase().retrieveTrades(uuid, 0, 15);
 
         return JsonOut.build(j -> {
-            j.obj().f("uuid", uuid.toString()).f("name", session.name).f("online", snap.online())
+            j.obj().f("signedIn", true).f("uuid", uuid.toString()).f("name", session.name).f("online", snap.online())
              .f("balance", snap.balance()).f("debt", snap.debt()).f("loanRate", EconomyEngine.loanDailyRate());
             double total = 0;
             j.name("portfolio").obj().f("capacity", snap.capacity()).name("items").arr();

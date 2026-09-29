@@ -3,12 +3,7 @@ package me.bounser.nascraft.web;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
-/**
- * Time-based cache of prepared payloads. Concurrent requests for an expired
- * key wait for a single rebuild instead of all rebuilding at once.
- */
 public final class TtlCache {
-
     private record Entry(Payload payload, long expires) {}
 
     private final ConcurrentHashMap<String, Entry> entries = new ConcurrentHashMap<>();

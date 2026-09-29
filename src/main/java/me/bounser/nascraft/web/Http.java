@@ -12,9 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-/** One HTTP request/response with the helpers every handler needs. */
 public final class Http {
-
     public static final int MAX_BODY = 16 * 1024;
 
     private static final String CSP = "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; " +
@@ -38,7 +36,6 @@ public final class Http {
 
     public String header(String name) { return ex.getRequestHeaders().getFirst(name); }
 
-    /** Client IP, trusting X-Forwarded-For only when configured to sit behind a proxy. */
     public String ip() {
         if (settings.behindProxy) {
             String fwd = header("X-Forwarded-For");
@@ -98,10 +95,6 @@ public final class Http {
         }
     }
 
-    /**
-     * Mutating requests must carry our custom header (a cross-site form can't
-     * add it) and, if the browser sends an Origin, it must be this host.
-     */
     public boolean sameOriginWrite() {
         if (!"nascraft".equals(header("X-Requested-With"))) return false;
         String origin = header("Origin");
@@ -121,7 +114,6 @@ public final class Http {
         h.set("Content-Security-Policy", CSP);
     }
 
-    /** Sends a prepared payload, honouring If-None-Match and Accept-Encoding. */
     public void send(int status, Payload p, String cacheControl) throws IOException {
         Headers h = ex.getResponseHeaders();
         securityHeaders(h);

@@ -22,12 +22,7 @@ import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * The web dashboard: JDK HTTP server on virtual threads, a small router, and
- * the lifecycle glue (sessions, sweeps, live stream).
- */
 public final class WebServer {
-
     private static final String SESSION_COOKIE = "nc_session";
     private static final String DEVICE_COOKIE = "nc_device";
 
@@ -116,10 +111,6 @@ public final class WebServer {
         if (ip == null || ip.isBlank() || ip.equals("0.0.0.0")) ip = "localhost";
         return "http://" + ip + ":" + settings.port;
     }
-
-    // ------------------------------------------------------------------
-    // Routing
-    // ------------------------------------------------------------------
 
     private void route(Http h) throws Exception {
         String path = h.path;
@@ -218,7 +209,10 @@ public final class WebServer {
 
     private void me(Http h) throws Exception {
         Auth.Session s = session(h);
-        if (s == null) { h.error(401, "not_signed_in"); return; }
+        if (s == null) {
+            h.json(200, JsonOut.build(j -> j.obj().f("signedIn", false).end()));
+            return;
+        }
         h.json(200, api.me(s));
     }
 
@@ -244,10 +238,6 @@ public final class WebServer {
                 .f("holding", r.holding()).end()));
     }
 
-    // ------------------------------------------------------------------
-    // Live stream sources
-    // ------------------------------------------------------------------
-
     private static String economyVersion() {
         EconomyEngine e = EconomyEngine.get();
         return e == null ? null : Long.toString(e.latest().timestamp());
@@ -258,10 +248,6 @@ public final class WebServer {
         Payload p = api.economy();
         return p == null ? null : p.raw();
     }
-
-    // ------------------------------------------------------------------
-    // Sessions persistence + housekeeping
-    // ------------------------------------------------------------------
 
     private BaseDatabase db() {
         Database d = DatabaseManager.get().getDatabase();

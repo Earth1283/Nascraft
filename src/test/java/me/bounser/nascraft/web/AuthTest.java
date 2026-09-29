@@ -12,7 +12,6 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AuthTest {
-
     private static final long MIN = 60_000L;
     private final List<String> saved = new ArrayList<>();
     private final List<String> removed = new ArrayList<>();

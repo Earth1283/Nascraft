@@ -3,12 +3,9 @@ package me.bounser.nascraft.economy;
 import java.util.Arrays;
 import java.util.List;
 
-/** Pure functions behind the economy engine. No Bukkit, no state: easy to test. */
 public final class EconomyMath {
-
     private EconomyMath() {}
 
-    /** Smoothing factor for an EMA updated every {@code stepHours} with the given half-life. */
     public static double emaAlpha(double stepHours, double halfLifeHours) {
         if (halfLifeHours <= 0) return 1;
         return 1 - Math.pow(0.5, stepHours / halfLifeHours);
@@ -23,10 +20,6 @@ public final class EconomyMath {
         return Math.max(min, Math.min(max, v));
     }
 
-    /**
-     * Gini coefficient of non-negative values (0 = perfect equality, 1 = one holder has everything).
-     * Negative values are treated as zero. O(n log n).
-     */
     public static double gini(double[] values) {
         int n = values.length;
         if (n < 2) return 0;
@@ -42,10 +35,6 @@ public final class EconomyMath {
         return (2 * weighted) / (n * cumulative) - (n + 1.0) / n;
     }
 
-    /**
-     * Lorenz curve sampled at {@code points}+1 evenly spaced population shares (0..1).
-     * Element i is the share of total wealth held by the poorest i/points of holders.
-     */
     public static double[] lorenz(double[] values, int points) {
         double[] out = new double[points + 1];
         int n = values.length;
@@ -70,7 +59,6 @@ public final class EconomyMath {
         return out;
     }
 
-    /** Share of total held by the top {@code fraction} (e.g. 0.1 = top 10%). */
     public static double topShare(double[] values, double fraction) {
         int n = values.length;
         if (n == 0) return 0;
@@ -86,7 +74,6 @@ public final class EconomyMath {
         return total == 0 ? 0 : top / total;
     }
 
-    /** Herfindahl–Hirschman index of shares (0..1). 1 = one participant has the whole market. */
     public static double hhi(double[] amounts) {
         double total = 0;
         for (double a : amounts) total += Math.max(0, a);
@@ -99,22 +86,16 @@ public final class EconomyMath {
         return h;
     }
 
-    /**
-     * Taylor rule, all in per-day fractions:
-     * {@code i = r* + π + a(π − π*) + b·gap}.
-     */
     public static double taylorRate(double neutral, double inflation, double target,
                                     double inflationWeight, double gap, double outputWeight) {
         return neutral + inflation + inflationWeight * (inflation - target) + outputWeight * gap;
     }
 
-    /** Per-day inflation from two index readings {@code hours} apart (compounded). */
     public static double dailyInflation(double indexThen, double indexNow, double hours) {
         if (indexThen <= 0 || indexNow <= 0 || hours <= 0) return 0;
         return Math.pow(indexNow / indexThen, 24.0 / hours) - 1;
     }
 
-    /** Standard deviation of log returns of a price series. */
     public static double logReturnVolatility(List<Double> prices) {
         int n = prices.size();
         if (n < 3) return 0;
@@ -136,7 +117,6 @@ public final class EconomyMath {
 
     public enum Phase { EXPANSION, SLOWDOWN, CONTRACTION, RECOVERY }
 
-    /** Classifies the cycle from the output gap and its most recent change. */
     public static Phase phase(double gap, double gapChange) {
         if (gap >= 0) return gapChange >= 0 ? Phase.EXPANSION : Phase.SLOWDOWN;
         return gapChange < 0 ? Phase.CONTRACTION : Phase.RECOVERY;

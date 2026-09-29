@@ -15,12 +15,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-/**
- * The single-page app's files, loaded into memory once at startup with gzip
- * copies and ETags. Optional overrides come from plugins/Nascraft/web/.
- */
 public final class StaticAssets {
-
     private static final String ROOT = "web";
 
     private final Map<String, Payload> files = new HashMap<>();
@@ -29,7 +24,6 @@ public final class StaticAssets {
         loadBundled(log);
         if (overrideDir != null && overrideDir.isDirectory()) loadDirectory(overrideDir.toPath());
 
-        // Branding goes straight into index.html so the first paint is already right.
         Payload index = files.get("/index.html");
         if (index != null) {
             String html = new String(index.raw(), StandardCharsets.UTF_8);
@@ -39,12 +33,11 @@ public final class StaticAssets {
         log.info("Web: loaded " + files.size() + " static assets.");
     }
 
-    /** Asset for a request path; unknown non-API paths fall back to the SPA shell. */
     public Payload get(String path) {
         if (path.equals("/")) return files.get("/index.html");
         Payload p = files.get(path);
         if (p != null) return p;
-        if (path.lastIndexOf('.') > path.lastIndexOf('/')) return null; // a missing file, not a route
+        if (path.lastIndexOf('.') > path.lastIndexOf('/')) return null;
         return files.get("/index.html");
     }
 

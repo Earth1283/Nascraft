@@ -9,22 +9,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Immutable view of economy.yml. All rates are fractions (0.005 = 0.5%) and
- * inflation/interest are expressed per real-time day.
- */
 public final class EconomySettings {
-
     public final boolean enabled;
     public final int tickSeconds;
     public final int microTickSeconds;
     public final int snapshotRetentionDays;
 
-    // Inflation measurement
     public final double inflationSmoothingHours;
     public final double inflationReferenceHours;
 
-    // Central bank
     public final boolean cbEnabled;
     public final boolean cbFixedMode;
     public final double cbFixedRate;
@@ -41,14 +34,12 @@ public final class EconomySettings {
     public final double minLiquidity;
     public final double maxLiquidity;
 
-    // Price level anchoring (quantity theory)
     public final boolean priceLevelEnabled;
     public final double priceLevelElasticity;
     public final double maxPriceLevelStepPerDay;
     public final double minPriceLevel;
     public final double maxPriceLevel;
 
-    // Treasury / fiscal
     public final boolean treasuryEnabled;
     public final double treasuryReserve;
     public final boolean stabilizersEnabled;
@@ -68,7 +59,6 @@ public final class EconomySettings {
     public final int wealthTaxBatchSize;
     public final double wealthTaxMaxPerPlayer;
 
-    // Micro
     public final boolean meanReversionEnabled;
     public final double meanReversionHalfLifeHours;
     public final boolean spilloverEnabled;
@@ -87,7 +77,6 @@ public final class EconomySettings {
     public final Map<String, Override> categoryOverrides;
     public final Map<String, Override> itemOverrides;
 
-    // Cycle / shocks
     public final double trendHalfLifeHours;
     public final double recessionGap;
     public final boolean shocksEnabled;
@@ -102,14 +91,10 @@ public final class EconomySettings {
     public final List<String> shockExcludedCategories;
     public final double weightShortage, weightGlut, weightBoom, weightSlump;
 
-    // Analytics
     public final int analyticsWindowDays;
     public final int giniLookbackDays;
     public final int historyMaxPoints;
 
-    /**
-     * Per-category or per-item tuning. Null fields fall through to the global value.
-     */
     public record Override(Double halfLifeHours, Double spillover, Boolean shocks, Boolean dynamicSpread,
                            Double spreadFactor, Boolean meanReversion) {
         static Override read(ConfigurationSection s) {

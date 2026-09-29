@@ -8,9 +8,7 @@ import java.io.OutputStreamWriter;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 
-/** Thin fluent wrapper over Gson's streaming writer. Non-finite numbers become null. */
 public final class JsonOut {
-
     @FunctionalInterface
     public interface Body { void write(JsonOut j) throws IOException; }
 
@@ -39,7 +37,6 @@ public final class JsonOut {
     public JsonOut val(boolean v) throws IOException { w.value(v); return this; }
     public JsonOut val(long v) throws IOException { w.value(v); return this; }
 
-    /** Numbers are rounded to 6 significant decimals to keep payloads small. */
     public JsonOut val(double v) throws IOException {
         if (!Double.isFinite(v)) w.nullValue();
         else if (v == Math.rint(v) && Math.abs(v) < 1e15) w.value((long) v);
@@ -59,7 +56,7 @@ public final class JsonOut {
         if (a >= 1e6) return Math.rint(v * 100) / 100;
         if (a >= 1) return Math.rint(v * 1e6) / 1e6;
         if (a == 0) return 0;
-        // Keep ~6 significant digits for small magnitudes (rates, inflation).
+
         double scale = Math.pow(10, 6 - (int) Math.floor(Math.log10(a)) - 1);
         return Math.rint(v * scale) / scale;
     }

@@ -16,11 +16,10 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 class EconomyDataTest extends DatabaseTest {
-
     @BeforeEach
     void createEconomyTables() throws SQLException {
         EconomyData.createTables(connection);
-        EconomyData.createTables(connection); // idempotent
+        EconomyData.createTables(connection);
     }
 
     private static MacroSnapshot snap(long ts, double cpi) {
@@ -87,7 +86,7 @@ class EconomyDataTest extends DatabaseTest {
         double[] near = EconomyData.cpiNear(connection, 10_500);
         assertEquals(10_000, (long) near[0]);
         assertEquals(110, near[1], 1e-9);
-        assertEquals(0, (long) EconomyData.cpiNear(connection, -5)[0]); // falls back to earliest
+        assertEquals(0, (long) EconomyData.cpiNear(connection, -5)[0]);
     }
 
     @Test

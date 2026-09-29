@@ -52,7 +52,6 @@ public class Price {
     private final float taxBuy;
     private final float taxSell;
 
-    // Volatility premium added to the spread by the economy engine (0 = off).
     private volatile double extraSpread = 0;
 
     private double chartDayHigh;
@@ -114,7 +113,6 @@ public class Price {
         updateValue();
     }
 
-    /** Economy-driven stock drift (reversion, spillovers, shocks). Bumps the sync version. */
     public void adjustStock(double delta) {
         if (delta == 0 || !Double.isFinite(delta)) return;
         stock += (float) delta;
@@ -122,7 +120,6 @@ public class Price {
         version++;
     }
 
-    /** Stock change that moves the log price by {@code logChange} (0 when inelastic). */
     public double stockForLogChange(double logChange) {
         if (elasticity == 0) return 0;
         return -logChange / (0.0005 * elasticity);
@@ -461,20 +458,16 @@ public class Price {
         return factor * (expTerm1 - expTerm2);
     }
 
-    /** Effective buy multiplier after fiscal/monetary policy and the volatility spread. */
     public float getBuyTaxMultiplier() { return MarketModifiers.effectiveBuy(taxBuy, taxSell, extraSpread); }
 
-    /** Effective sell multiplier after fiscal/monetary policy and the volatility spread. */
     public float getSellTaxMultiplier() { return MarketModifiers.effectiveSell(taxBuy, taxSell, extraSpread); }
 
-    /** Configured multipliers, before any economy policy is applied. */
     public float getBaseBuyTaxMultiplier() { return taxBuy; }
     public float getBaseSellTaxMultiplier() { return taxSell; }
 
     public double getExtraSpread() { return extraSpread; }
     public void setExtraSpread(double extraSpread) { this.extraSpread = Math.max(0, extraSpread); }
 
-    /** Equilibrium (stock = 0) value in today's money: initial value times the price level. */
     public double base() { return initialValue * MarketModifiers.priceLevel(); }
 
     public Item getItem() { return item; }

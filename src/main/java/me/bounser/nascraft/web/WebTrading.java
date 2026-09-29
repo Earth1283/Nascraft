@@ -16,12 +16,7 @@ import org.bukkit.entity.Player;
 
 import java.util.UUID;
 
-/**
- * Portfolio trading from the website: buys land in the portfolio, sells come
- * out of it, mirroring the Discord flow. Always executed on the global thread.
- */
 public final class WebTrading {
-
     public record Result(boolean ok, String error, double worth, double balance, int holding) {
         static Result fail(String error) { return new Result(false, error, 0, 0, 0); }
     }
@@ -65,7 +60,7 @@ public final class WebTrading {
             portfolio.addItem(item, amount);
         } else {
             if (!portfolio.hasItem(item, amount)) return Result.fail("not_enough_items");
-            // Portfolio items back outstanding loans; selling them is locked while in debt.
+
             if (DebtManager.getInstance().getDebtOfPlayer(uuid) > 0) return Result.fail("debt_locked");
 
             SellItemEvent event = new SellItemEvent(online, item, amount);

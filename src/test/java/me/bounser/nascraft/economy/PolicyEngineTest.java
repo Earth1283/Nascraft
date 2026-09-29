@@ -9,7 +9,6 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 class PolicyEngineTest {
-
     private static final long HOUR = 3_600_000L;
 
     private static EconomySettings settings(String yaml) throws Exception {
@@ -29,7 +28,7 @@ class PolicyEngineTest {
     void tightensOnInflation() throws Exception {
         EconomySettings s = settings("central-bank:\n  smoothing: 0\n");
         PolicyState st = new PolicyState();
-        st.inflation = 0.01; // already running hot
+        st.inflation = 0.01;
         var r = PolicyEngine.step(st, inputs(10 * HOUR, 101, 100, 1000, 0, 0, 0, 0), s);
 
         assertTrue(r.state().policyRate > s.neutralRate + s.inflationTarget, "rate " + r.state().policyRate);
@@ -81,10 +80,9 @@ class PolicyEngineTest {
     void priceLevelCapped() throws Exception {
         EconomySettings s = settings("price-level:\n  max-change-per-day: 0.024\n");
         PolicyState st = new PolicyState();
-        st.baseMoneySupply = 100; // per holder
+        st.baseMoneySupply = 100;
         st.lastTick = 0;
 
-        // Money per holder quadrupled → target level 2, but only one 5-minute tick passed.
         var r = PolicyEngine.step(st, inputs(1, 100, 100, 0, 400 * 10, 10, 0, 0), s);
         double maxStep = 0.024 * (s.tickSeconds / 3600.0) / 24;
         assertEquals(1 + maxStep, r.state().priceLevel, 1e-12);
@@ -125,6 +123,17 @@ class PolicyEngineTest {
         assertEquals(1, r.state().taxScale);
         assertEquals(1, r.state().priceLevel);
         assertEquals(0, r.state().ubiPerCapita);
+    }
+
+    @Test
+    @DisplayName("A quiet start doesn't anchor the trend at zero and read later trading as a huge boom")
+    void coldStartTrend() throws Exception {
+        EconomySettings s = settings("");
+        PolicyState st = new PolicyState();
+        var quiet = PolicyEngine.step(st, inputs(HOUR, 100, 100, 0, 0, 0, 0, 0), s);
+        var firstTrades = PolicyEngine.step(quiet.state(), inputs(2 * HOUR, 100, 100, 5000, 0, 0, 0, 0), s);
+        assertEquals(0, firstTrades.snapshot().outputGap(), 1e-12);
+        assertEquals(5000, firstTrades.state().trendOutput, 1e-9);
     }
 
     @Test

@@ -16,12 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Persistence for the economy engine. Portable SQL (SQLite + MySQL): natural
- * keys only, no auto-increment, upserts through {@link SqlDialect}.
- */
 public final class EconomyData {
-
     private EconomyData() {}
 
     public static void createTables(Connection c) throws SQLException {
@@ -53,15 +48,11 @@ public final class EconomyData {
                     "start_ts BIGINT NOT NULL, " +
                     "end_ts BIGINT NOT NULL)");
         }
-        // Index for the trailing-24h aggregation; ignore "already exists" on MySQL.
+
         try (Statement st = c.createStatement()) {
             st.execute("CREATE INDEX idx_trade_log_day ON trade_log(day)");
         } catch (SQLException ignored) { }
     }
-
-    // ------------------------------------------------------------------
-    // Ledger windows
-    // ------------------------------------------------------------------
 
     public record Totals(double created, double destroyed, double taxes, long trades) {
         public double gdp() { return created + destroyed; }
@@ -99,10 +90,6 @@ public final class EconomyData {
         }
     }
 
-    // ------------------------------------------------------------------
-    // Snapshots
-    // ------------------------------------------------------------------
-
     public static void insertSnapshot(Connection c, MacroSnapshot s) throws SQLException {
         String sql = SqlDialects.current().replaceInto() + " economy_snapshots (ts, cpi, inflation, gdp, real_gdp, money_supply, " +
                 "velocity, output_gap, phase, recession, policy_rate, liquidity, tax_scale, price_level, treasury, ubi, gini, " +
@@ -136,10 +123,6 @@ public final class EconomyData {
         }
     }
 
-    /**
-     * Snapshots since {@code sinceTs}, oldest first, thinned to at most
-     * {@code maxPoints} evenly spaced rows (the latest row is always kept).
-     */
     public static List<MacroSnapshot> loadSnapshots(Connection c, long sinceTs, int maxPoints) throws SQLException {
         List<MacroSnapshot> all = new ArrayList<>();
         try (PreparedStatement p = c.prepareStatement("SELECT * FROM economy_snapshots WHERE ts >= ? ORDER BY ts ASC")) {
@@ -162,7 +145,6 @@ public final class EconomyData {
         }
     }
 
-    /** CPI reading closest to (at or before) {@code ts}; the earliest one if none precede it. */
     public static double[] cpiNear(Connection c, long ts) throws SQLException {
         try (PreparedStatement p = c.prepareStatement(
                 "SELECT ts, cpi FROM economy_snapshots WHERE ts <= ? ORDER BY ts DESC LIMIT 1")) {
@@ -213,10 +195,6 @@ public final class EconomyData {
         return out;
     }
 
-    // ------------------------------------------------------------------
-    // Key/value state (policy + treasury)
-    // ------------------------------------------------------------------
-
     public static Map<String, Double> loadState(Connection c) throws SQLException {
         Map<String, Double> m = new HashMap<>();
         try (PreparedStatement p = c.prepareStatement("SELECT k, v FROM economy_state");
@@ -240,7 +218,6 @@ public final class EconomyData {
         }
     }
 
-    /** Atomically adds {@code delta} to a state value (creating it at {@code delta}). */
     public static void addToState(Connection c, String key, double delta) throws SQLException {
         SqlDialect d = SqlDialects.current();
         String sql = "INSERT INTO economy_state (k, v) VALUES (?, ?)" + d.onConflictUpdate("k") + "v = v + " + d.inserted("v");
@@ -251,11 +228,6 @@ public final class EconomyData {
         }
     }
 
-    /**
-     * Atomically subtracts {@code amount} if the value stays at or above {@code floor}.
-     * Safe across servers sharing one database.
-     * @return true if the withdrawal happened
-     */
     public static boolean withdrawFromState(Connection c, String key, double amount, double floor) throws SQLException {
         try (PreparedStatement p = c.prepareStatement("UPDATE economy_state SET v = v - ? WHERE k = ? AND v - ? >= ?")) {
             p.setDouble(1, amount);
@@ -265,10 +237,6 @@ public final class EconomyData {
             return p.executeUpdate() == 1;
         }
     }
-
-    // ------------------------------------------------------------------
-    // Shocks
-    // ------------------------------------------------------------------
 
     public record ShockRow(String id, String kind, String category, double impact, long start, long end) {}
 
@@ -298,10 +266,6 @@ public final class EconomyData {
         return out;
     }
 
-    // ------------------------------------------------------------------
-    // Wealth + trading analytics
-    // ------------------------------------------------------------------
-
     public record MoneySupply(double total, int holders) {}
 
     public static MoneySupply moneySupply(Connection c) throws SQLException {
@@ -311,7 +275,6 @@ public final class EconomyData {
         }
     }
 
-    /** uuid → balance plus latest portfolio worth recorded within {@code sinceDay}. */
     public static Map<String, Double> wealthByPlayer(Connection c, int sinceDay) throws SQLException {
         Map<String, Double> wealth = new HashMap<>();
         try (PreparedStatement p = c.prepareStatement("SELECT uuid, balance FROM balances");
@@ -349,7 +312,6 @@ public final class EconomyData {
         return out;
     }
 
-    /** All traders' volumes over the window, for concentration (HHI). */
     public static double[] traderVolumes(Connection c, int sinceDay) throws SQLException {
         List<Double> v = new ArrayList<>();
         try (PreparedStatement p = c.prepareStatement(
@@ -382,7 +344,6 @@ public final class EconomyData {
         return out;
     }
 
-    /** Trades and volume by hour of day (0–23), from the trade log timestamps. */
     public static double[][] hourlyActivity(Connection c, int sinceDay) throws SQLException {
         double[][] out = new double[24][2];
         try (PreparedStatement p = c.prepareStatement(

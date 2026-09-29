@@ -20,7 +20,6 @@ public class Lang {
 
     public static Lang get() { return instance == null ? instance = new Lang() : instance; }
 
-
     private Lang() {
 
         saveResourceIfNotExists("langs/en_US.yml");
@@ -54,10 +53,6 @@ public class Lang {
         Formatter.setSeparator(Separator.valueOf(message(Message.SEPARATOR).toUpperCase()));
     }
 
-    /**
-     * Lang files copied to the data folder by an older version lack newer keys.
-     * Fall back to the bundled file for the same language (or en_US) for those.
-     */
     private void applyBundledDefaults() {
         String selected = Config.getInstance().getSelectedLanguage();
         InputStream in = Nascraft.getInstance().getResource("langs/" + selected + ".yml");

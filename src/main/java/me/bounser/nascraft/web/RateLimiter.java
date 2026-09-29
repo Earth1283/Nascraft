@@ -2,9 +2,7 @@ package me.bounser.nascraft.web;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Token bucket per key (client IP). Refills continuously to {@code perMinute} tokens. */
 public final class RateLimiter {
-
     private static final class Bucket {
         double tokens;
         long last;
@@ -32,7 +30,6 @@ public final class RateLimiter {
         }
     }
 
-    /** Drops buckets that have refilled completely (idle clients). */
     public void sweep() {
         long now = System.currentTimeMillis();
         buckets.entrySet().removeIf(e -> {

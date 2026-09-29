@@ -9,9 +9,7 @@ import org.bukkit.entity.Player;
 
 import java.util.List;
 
-/** Gives the player a one-time code to sign in to the web dashboard. */
 public class WebCodeCommand extends Command {
-
     public WebCodeCommand(String name) {
         super(name, new String[0], "Get a web dashboard login code", "nascraft.web");
     }

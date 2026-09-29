@@ -424,11 +424,6 @@ public class Item {
         return worth;
     }
 
-    /**
-     * Books a trade whose goods move through the portfolio rather than the
-     * player's inventory (web dashboard). Money must already have been moved.
-     * Updates stock, the economy ledger, the trade log and fires the usual event.
-     */
     public void applyExternalTrade(int amount, boolean buy, double worth, UUID uuid, boolean limitReached) {
         float stockChange = buy ? -amount * multiplier : amount * multiplier;
         if (!limitReached) {
@@ -553,7 +548,6 @@ public class Item {
 
     public ItemStack getItemStack() { return itemStack.clone(); }
 
-    /** The backing stack without a defensive copy. Callers must not mutate it. */
     public ItemStack peekItemStack() { return itemStack; }
 
     public ItemStack getItemStack(int quantity) {

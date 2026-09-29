@@ -74,7 +74,6 @@ public class DebtMenu implements MenuPage {
         for (int i : config.getDebtFillersSlots())
             gui.setItem(i, filler);
 
-
         // Explanation
         if (config.getDebtExpEnabled()) {
 

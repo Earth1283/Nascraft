@@ -6,9 +6,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import java.util.List;
 import java.util.regex.Pattern;
 
-/** Immutable view of config.yml → website. See the comments there for meanings. */
 public final class WebSettings {
-
     public static final List<String> BUNDLED_LANGUAGES = List.of("en", "es", "zh_CN", "de", "fr", "pt_BR", "ru");
     private static final Pattern HEX = Pattern.compile("^#[0-9a-fA-F]{6}$");
 

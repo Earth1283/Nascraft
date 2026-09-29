@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MarketModifiersTest extends MarketTestFixture {
-
     @AfterEach
     void resetModifiers() { MarketModifiers.reset(); }
 
@@ -45,7 +44,7 @@ class MarketModifiersTest extends MarketTestFixture {
     @DisplayName("EXPLOIT: buy-then-sell loses money on a real price under aggressive easing")
     void roundTripOnPrice() {
         Price price = aPrice().initialValue(100f).elasticity(10f).taxes(1.02f, 0.98f).precision(6).build();
-        MarketModifiers.set(1, 0, 1.02, 0.005); // taxes zeroed, payouts boosted
+        MarketModifiers.set(1, 0, 1.02, 0.005);
 
         double spent = price.getProjectedCost(-10, price.getBuyTaxMultiplier());
         price.changeStock(-10);
@@ -73,7 +72,7 @@ class MarketModifiersTest extends MarketTestFixture {
         price.updateValue();
         assertEquals(v1 * 2, price.getValue(), v1 * 1e-5);
         assertEquals(c1 * 2, price.getProjectedCost(-5, 1f), c1 * 1e-4);
-        // Inverse mapping stays consistent at the new level.
+
         assertEquals(50, price.getStockFromValue(price.getValue()), 0.01);
     }
 

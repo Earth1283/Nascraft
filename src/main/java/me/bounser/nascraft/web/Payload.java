@@ -8,12 +8,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.zip.GZIPOutputStream;
 
-/**
- * A response body prepared once and served many times: raw bytes, a gzipped
- * copy (when it's worth it) and a strong ETag.
- */
 public record Payload(String contentType, byte[] raw, byte[] gzip, String etag) {
-
     private static final int GZIP_MIN = 512;
 
     public static Payload of(String contentType, byte[] raw) {

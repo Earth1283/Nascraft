@@ -3,19 +3,14 @@ package me.bounser.nascraft.economy;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * Persistent policy state carried between engine ticks. Stored as key/value
- * rows so new fields can be added without schema changes.
- */
 public final class PolicyState {
-
     public double policyRate = Double.NaN;
     public double liquidity = 1.0;
     public double taxScale = 1.0;
     public double priceLevel = 1.0;
-    /** Money per holder the price level is measured against (first observation). */
+
     public double baseMoneySupply = 0;
-    /** Slow EMA of real GDP: the economy's potential output. */
+
     public double trendOutput = Double.NaN;
     public double outputGap = 0;
     public double inflation = 0;

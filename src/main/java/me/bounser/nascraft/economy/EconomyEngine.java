@@ -38,17 +38,7 @@ import java.util.concurrent.atomic.DoubleAdder;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.logging.Level;
 
-/**
- * Runs the server economy: measures it, sets policy, and feeds the results
- * back into prices, loans and players' wallets.
- *
- * <p>Every node records its own trades into a ledger and flushes it to the
- * shared database each tick. The primary node aggregates all nodes' windows,
- * runs {@link PolicyEngine}, persists the new state and runs item dynamics.
- * Followers just load and apply the policy state.
- */
 public final class EconomyEngine {
-
     public static final String TREASURY = "treasury";
     private static final String LAST_WEALTH_TAX = "last_wealth_tax";
     private static final long HOUR = 3_600_000L, DAY = 24 * HOUR;
@@ -67,7 +57,6 @@ public final class EconomyEngine {
     private volatile MacroSnapshot latest = MacroSnapshot.empty();
     private volatile double treasury = 0;
 
-    // Ledger for this node's current window.
     private final DoubleAdder created = new DoubleAdder();
     private final DoubleAdder destroyed = new DoubleAdder();
     private final DoubleAdder taxes = new DoubleAdder();
@@ -83,10 +72,6 @@ public final class EconomyEngine {
         this.settings = settings;
         this.micro = new MicroDynamics(settings, new SecureRandom());
     }
-
-    // ------------------------------------------------------------------
-    // Lifecycle
-    // ------------------------------------------------------------------
 
     public static void start(Nascraft plugin) {
         EconomySettings settings = loadSettings(plugin);
@@ -113,14 +98,12 @@ public final class EconomyEngine {
         return EconomySettings.from(YamlConfiguration.loadConfiguration(file));
     }
 
-    /** Re-reads economy.yml. Scheduling intervals take effect on the next restart. */
     public void reload() {
         settings = loadSettings(plugin);
         micro.setSettings(settings);
         applyModifiers();
     }
 
-    /** Flushes the open ledger window. Called on shutdown. */
     public void shutdown() {
         try { flushWindow(System.currentTimeMillis()); }
         catch (RuntimeException e) { plugin.getLogger().warning("Economy: final ledger flush failed: " + e.getMessage()); }
@@ -162,15 +145,6 @@ public final class EconomyEngine {
         FoliaScheduler.runAsyncTimer(plugin, this::safeUbi, ubi, ubi);
     }
 
-    // ------------------------------------------------------------------
-    // Hooks from the rest of the plugin
-    // ------------------------------------------------------------------
-
-    /**
-     * Called for every completed market trade.
-     * @param worth money that changed hands (what the player paid or received)
-     * @param stockChange how far the trade moved the item's stock (0 if limits blocked it)
-     */
     public static void recordTrade(Item item, boolean buy, double worth, double stockChange) {
         EconomyEngine e = instance;
         if (e == null || worth <= 0 || !Double.isFinite(worth)) return;
@@ -186,25 +160,22 @@ public final class EconomyEngine {
             e.created.add(worth);
             float mult = price.getSellTaxMultiplier();
             if (mult > 0) {
-                // Only the fiscal part is tax; the central bank's liquidity haircut
-                // is money destroyed, not treasury revenue.
-                double gross = worth / mult;
-                double fiscal = mult / Math.max(1e-9, MarketModifiers.liquidity());
-                if (fiscal < 1) e.taxes.add(gross * (1 - fiscal));
+                double valueBeforeDeductions = worth / mult;
+                double sellMultiplierExcludingLiquidityHaircut = mult / Math.max(1e-9, MarketModifiers.liquidity());
+                if (sellMultiplierExcludingLiquidityHaircut < 1)
+                    e.taxes.add(valueBeforeDeductions * (1 - sellMultiplierExcludingLiquidityHaircut));
             }
         }
         e.trades.increment();
         if (stockChange != 0) e.micro.onTrade(item.isParent() ? item.getIdentifier() : item.getParent().getIdentifier(), stockChange);
     }
 
-    /** Loan interest collected: revenue for the treasury. */
     public static void recordInterest(double amount) {
         EconomyEngine e = instance;
         if (e == null || amount <= 0 || !e.settings.treasuryEnabled) return;
         e.addToTreasuryAsync(amount);
     }
 
-    /** Daily loan rate: the central bank's policy rate if it controls loans, else the configured one. */
     public static double loanDailyRate() {
         double configured = Config.getInstance().getLoansDailyInterest();
         EconomyEngine e = instance;
@@ -212,10 +183,6 @@ public final class EconomyEngine {
         double r = e.state.policyRate;
         return Double.isFinite(r) ? r : configured;
     }
-
-    // ------------------------------------------------------------------
-    // Macro tick
-    // ------------------------------------------------------------------
 
     private void safeMacroTick() {
         try { macroTick(); }
@@ -230,7 +197,6 @@ public final class EconomyEngine {
         if (db == null) return;
 
         if (!Config.getInstance().isPrimaryNode()) {
-            // Followers mirror the primary's policy.
             Map<String, Double> kv = db.queryConnection(EconomyData::loadState);
             state = PolicyState.fromMap(kv);
             treasury = kv.getOrDefault(TREASURY, treasury);
@@ -284,7 +250,6 @@ public final class EconomyEngine {
         maybeWealthTax(now);
     }
 
-    /** Writes this node's ledger window and credits its taxes to the treasury. */
     private void flushWindow(long now) {
         double cr = created.sumThenReset(), de = destroyed.sumThenReset(), tx = taxes.sumThenReset();
         long tr = trades.sumThenReset();
@@ -317,7 +282,6 @@ public final class EconomyEngine {
         return out;
     }
 
-    /** Pushes the policy state into the pricing hot path and re-prices on a level change. */
     private void applyModifiers() {
         EconomySettings s = settings;
         PolicyState st = state;
@@ -330,10 +294,6 @@ public final class EconomyEngine {
         if (MarketModifiers.priceLevel() != before)
             for (Item item : MarketManager.getInstance().getAllParentItems()) item.getPrice().updateValue();
     }
-
-    // ------------------------------------------------------------------
-    // Micro tick (primary only)
-    // ------------------------------------------------------------------
 
     private void safeMicroTick() {
         try { microTick(); }
@@ -369,7 +329,6 @@ public final class EconomyEngine {
         assetSource = parents;
     }
 
-    /** Starts a shock by hand (admin command). */
     public Shock triggerShock(String category, double percent, double hours) {
         long now = System.currentTimeMillis();
         double log = Math.log(1 + percent / 100.0);
@@ -403,10 +362,6 @@ public final class EconomyEngine {
                 .replace("[HOURS]", String.valueOf(Math.max(1, Math.round((shock.end() - shock.start()) / (double) HOUR))));
         FoliaScheduler.runGlobal(plugin, () -> Bukkit.broadcast(MiniMessage.miniMessage().deserialize(text)));
     }
-
-    // ------------------------------------------------------------------
-    // Fiscal transfers
-    // ------------------------------------------------------------------
 
     private void safeUbi() {
         try { payUbi(); }
@@ -444,7 +399,6 @@ public final class EconomyEngine {
         });
     }
 
-    /** Daily progressive wealth tax, processed in small batches on the global thread. */
     private void maybeWealthTax(long now) {
         EconomySettings s = settings;
         if (!s.treasuryEnabled || !s.wealthTaxEnabled || s.wealthTaxBrackets.isEmpty() || wealthTaxRunning) return;
@@ -495,7 +449,6 @@ public final class EconomyEngine {
         FoliaScheduler.runGlobal(plugin, batch[0]);
     }
 
-    /** Marginal tax: each bracket's rate applies only to the part of the balance inside it. */
     public static double wealthTaxFor(double balance, List<EconomySettings.Bracket> brackets) {
         double tax = 0;
         for (int i = 0; i < brackets.size(); i++) {
@@ -514,7 +467,6 @@ public final class EconomyEngine {
         FoliaScheduler.runAsync(plugin, () -> db.withConnection(c -> EconomyData.addToState(c, TREASURY, amount)));
     }
 
-    /** Admin adjustment: positive deposits, negative withdraws (never below zero). */
     public boolean adjustTreasury(double delta) {
         BaseDatabase db = db();
         if (db == null) return false;
@@ -524,10 +476,6 @@ public final class EconomyEngine {
         if (ok) treasury += delta;
         return ok;
     }
-
-    // ------------------------------------------------------------------
-    // Read side (commands, placeholders, web)
-    // ------------------------------------------------------------------
 
     public EconomySettings settings() { return settings; }
 

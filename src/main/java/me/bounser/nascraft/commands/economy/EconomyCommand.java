@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Locale;
 
 public class EconomyCommand extends Command {
-
     private static final String ADMIN = "nascraft.economy.admin";
 
     public EconomyCommand() {
@@ -54,7 +53,7 @@ public class EconomyCommand extends Command {
                 double amount;
                 try { amount = Math.abs(Double.parseDouble(args[2])); } catch (NumberFormatException e) { usage(sender); return; }
                 double delta = args[1].equalsIgnoreCase("withdraw") ? -amount : amount;
-                // Database write: keep it off the main thread.
+
                 FoliaScheduler.runAsync(Nascraft.getInstance(), () -> {
                     boolean ok = engine.adjustTreasury(delta);
                     send(sender, ok

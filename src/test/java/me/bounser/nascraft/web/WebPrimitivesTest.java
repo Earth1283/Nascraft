@@ -16,7 +16,6 @@ import java.util.zip.GZIPInputStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 class WebPrimitivesTest {
-
     @Test
     @DisplayName("Large text payloads get a valid gzip copy; small ones don't")
     void payloadGzip() throws Exception {
@@ -52,12 +51,11 @@ class WebPrimitivesTest {
         assertTrue(pool.awaitTermination(5, TimeUnit.SECONDS));
         assertEquals(1, builds.get());
 
-        // Still-valid entries are served regardless of the caller's TTL...
         assertEquals("1", new String(cache.get("k", 0, () -> Payload.json("2".getBytes())).raw()));
-        // ...a zero-TTL entry is rebuilt on every call...
+
         assertEquals("z1", new String(cache.get("z", 0, () -> Payload.json("z1".getBytes())).raw()));
         assertEquals("z2", new String(cache.get("z", 0, () -> Payload.json("z2".getBytes())).raw()));
-        // ...and invalidation forces a rebuild.
+
         cache.invalidate("");
         assertEquals("3", new String(cache.get("k", 60_000, () -> Payload.json("3".getBytes())).raw()));
     }

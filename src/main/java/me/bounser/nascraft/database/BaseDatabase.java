@@ -34,9 +34,6 @@ public abstract class BaseDatabase implements Database {
 
     protected HikariDataSource dataSource;
 
-    // Fire-and-forget writes (trade log, flows) are queued here so callers on
-    // the main/region thread never block on JDBC. A single thread keeps writes
-    // in submission order, which also suits SQLite's single-writer model.
     private volatile ExecutorService writer;
 
     // Configure the Hikari pool (JDBC URL, driver, credentials, pool size).
@@ -81,7 +78,6 @@ public abstract class BaseDatabase implements Database {
         }
     }
 
-    /** Queues a write off the calling thread. Runs inline if the queue is unavailable. */
     protected void writeAsync(String context, SqlConsumer action) {
         ExecutorService w = writer;
         if (w != null) {
@@ -95,13 +91,11 @@ public abstract class BaseDatabase implements Database {
                 });
                 return;
             } catch (RejectedExecutionException ignored) {
-                // Shutting down: fall through and write synchronously.
             }
         }
         withConnection(action);
     }
 
-    /** Drains queued writes. Called on shutdown before the pool closes. */
     public void flushWrites() {
         ExecutorService w = writer;
         if (w == null) return;
@@ -643,7 +637,6 @@ public abstract class BaseDatabase implements Database {
     @Override
     public void updateBalances(java.util.Collection<UUID> uuids) {
         if (uuids.isEmpty()) return;
-        // One connection + transaction for the whole batch instead of one per player.
         withTransaction(c -> {
             for (UUID uuid : uuids) {
                 try {

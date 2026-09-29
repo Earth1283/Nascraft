@@ -13,7 +13,6 @@ import java.util.Random;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MicroDynamicsTest extends MarketTestFixture {
-
     private static final long HOUR = 3_600_000L;
 
     @AfterEach
@@ -131,7 +130,6 @@ class MicroDynamicsTest extends MarketTestFixture {
         m.tick(0, 60_000);
         assertEquals(90 * 1.1, block.getValue(), 0.05);
 
-        // Inside the band nothing moves.
         double settled = block.getStock();
         m.tick(60_000, 120_000);
         assertEquals(settled, block.getStock(), 1e-3);

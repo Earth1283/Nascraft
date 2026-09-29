@@ -258,7 +258,7 @@ class MarketMatchingTest extends MarketTestFixture {
             ItemStack playerItem = mockItem(Material.DIAMOND);
             when(playerItem.isSimilar(template)).thenReturn(true);
 
-            assertNull(marketManager.getItem(playerItem)); // builds an empty index
+            assertNull(marketManager.getItem(playerItem));
             addToMarket(item);
             assertSame(item, marketManager.getItem(playerItem));
         }

@@ -38,13 +38,10 @@ public class MarketManager {
 
     private void invalidate() { parentsCache = null; materialIndex = null; }
 
-    /** Call when an item's backing ItemStack changes so lookups are rebuilt. */
     public void invalidateLookups() { invalidate(); }
 
     private volatile List<Item> parentsCache;
 
-    // Items grouped by material, so ItemStack lookups only compare candidates of
-    // the same type instead of cloning + NBT-stripping every market item.
     private volatile Map<Material, List<Item>> materialIndex;
 
     private final List<Item> items = new TrackedItemList();
@@ -266,8 +263,6 @@ public class MarketManager {
 
         if (!itemStack1.getType().equals(itemStack2.getType())) return false;
 
-        // isSimilar ignores stack size and never mutates, so no clones are needed
-        // unless NBT keys must be stripped first.
         if (ignoredKeys.isEmpty()) return itemStack1.isSimilar(itemStack2);
 
         ItemStack itemStackWithoutFlags1 = itemStack1.clone();

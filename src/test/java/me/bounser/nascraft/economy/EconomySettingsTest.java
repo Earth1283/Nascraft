@@ -11,7 +11,6 @@ import java.nio.charset.StandardCharsets;
 import static org.junit.jupiter.api.Assertions.*;
 
 class EconomySettingsTest {
-
     private static EconomySettings bundled() throws Exception {
         try (Reader r = new InputStreamReader(EconomySettingsTest.class.getResourceAsStream("/economy.yml"), StandardCharsets.UTF_8)) {
             return EconomySettings.from(YamlConfiguration.loadConfiguration(r));
@@ -82,7 +81,7 @@ class EconomySettingsTest {
         EconomySettings s = bundled();
         assertEquals(0, EconomyEngine.wealthTaxFor(50_000, s.wealthTaxBrackets), 1e-9);
         assertEquals(100, EconomyEngine.wealthTaxFor(200_000, s.wealthTaxBrackets), 1e-9);
-        // 900k × 0.1% + 1M × 0.3%
+
         assertEquals(900 + 3000, EconomyEngine.wealthTaxFor(2_000_000, s.wealthTaxBrackets), 1e-6);
     }
 }

@@ -15,9 +15,7 @@ import java.net.http.HttpResponse;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Drives {@link Http} over a real socket: compression, ETags, CSRF guard, headers. */
 class HttpIntegrationTest {
-
     private HttpServer server;
     private HttpClient client;
     private String base;

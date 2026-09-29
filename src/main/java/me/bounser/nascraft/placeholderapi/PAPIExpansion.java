@@ -187,9 +187,6 @@ public class PAPIExpansion extends PlaceholderExpansion {
         return "0";
     }
 
-    /**
-     * {@code %nascraft_eco_<metric>%}. Reads the engine's cached snapshot: no I/O.
-     */
     private String economyPlaceholder(String metric) {
         EconomyEngine engine = EconomyEngine.get();
         if (engine == null) return "";

@@ -64,7 +64,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-
 public class Nascraft extends JavaPlugin {
 
     private static Nascraft main;

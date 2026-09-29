@@ -12,8 +12,6 @@ import java.util.UUID;
 
 public class PortfoliosManager {
 
-
-    // Read from the web dashboard's threads as well as the main thread.
     private final ConcurrentHashMap<UUID, Portfolio> inventories = new ConcurrentHashMap<>();
 
     private static PortfoliosManager instance;
@@ -41,7 +39,6 @@ public class PortfoliosManager {
 
             if (value == 0 && debt == 0) continue;
 
-            // Net worth: debt is subtracted once (it used to be subtracted twice).
             DatabaseManager.get().getDatabase().saveOrUpdateWorthToday(player.getUniqueId(), value - debt);
         }
     }

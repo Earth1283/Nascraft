@@ -9,7 +9,6 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class WebSessionsDaoTest extends DatabaseTest {
-
     @Test
     void lifecycle() throws SQLException {
         WebSessions.createTable(connection);

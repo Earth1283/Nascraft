@@ -11,21 +11,7 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/**
- * Item-level dynamics that make the market self-correcting:
- * <ul>
- *   <li>mean reversion of stock (natural production and consumption),</li>
- *   <li>spillovers between related items (substitutes move together),</li>
- *   <li>recipe arbitrage (a crafted item can't drift far from its inputs),</li>
- *   <li>volatility-dependent spreads,</li>
- *   <li>random supply/demand shocks.</li>
- * </ul>
- * Trades only enqueue spillovers; all stock changes happen in {@link #tick},
- * batched, off the main thread.
- */
 public final class MicroDynamics {
-
-    /** Minimal view of a market item, so the dynamics are testable without Bukkit. */
     public record Asset(String id, String category, Price price) {}
 
     private final Map<String, Double> pendingLog = new ConcurrentHashMap<>();
@@ -56,21 +42,13 @@ public final class MicroDynamics {
 
     public Collection<Asset> assets() { return byId.values(); }
 
-    // ------------------------------------------------------------------
-    // Trade hook
-    // ------------------------------------------------------------------
-
-    /**
-     * Records that a trade moved {@code id}'s stock by {@code stockChange}. Related
-     * items receive a proportional log-price impulse on the next tick.
-     */
     public void onTrade(String id, double stockChange) {
         EconomySettings s = settings;
         if (!s.spilloverEnabled || stockChange == 0) return;
         Asset src = byId.get(id.toLowerCase());
         if (src == null || s.isExcluded(src.id())) return;
         double stockPerLog = src.price().stockForLogChange(1);
-        if (stockPerLog == 0) return; // inelastic item: its price never moves
+        if (stockPerLog == 0) return;
         double srcLog = stockChange / stockPerLog;
 
         Map<String, Double> links = s.spillovers.get(src.id().toLowerCase());
@@ -91,10 +69,6 @@ public final class MicroDynamics {
         }
     }
 
-    // ------------------------------------------------------------------
-    // Shocks
-    // ------------------------------------------------------------------
-
     public List<Shock> activeShocks(long now) {
         List<Shock> out = new ArrayList<>();
         for (Shock s : shocks) if (s.isActive(now)) out.add(s);
@@ -103,7 +77,6 @@ public final class MicroDynamics {
 
     public void addShock(Shock shock) { shocks.add(shock); }
 
-    /** Rolls for a new random shock over {@code dtHours}. Returns it if one started. */
     public Shock maybeStartShock(long now, double dtHours) {
         EconomySettings s = settings;
         if (!s.shocksEnabled || s.shocksPerDay <= 0) return null;
@@ -116,7 +89,6 @@ public final class MicroDynamics {
         boolean marketWide = cats.isEmpty() || random.nextDouble() < s.marketWideChance;
         String category = marketWide ? null : cats.get(random.nextInt(cats.size()));
 
-        // Direction by configured weights for the chosen scope.
         double up = marketWide ? s.weightBoom : s.weightShortage;
         double down = marketWide ? s.weightSlump : s.weightGlut;
         if (up + down <= 0) return null;
@@ -131,11 +103,6 @@ public final class MicroDynamics {
         return shock;
     }
 
-    // ------------------------------------------------------------------
-    // Tick
-    // ------------------------------------------------------------------
-
-    /** Applies every pending dynamic for the interval (from, now]. Returns assets touched. */
     public int tick(long from, long now) {
         EconomySettings s = settings;
         double dtHours = Math.max(0, (now - from) / 3_600_000.0);
@@ -179,18 +146,16 @@ public final class MicroDynamics {
         if (hourValues == null) return 0;
         List<Double> snapshot;
         try {
-            // The list is rotated by another timer; work on a copy.
             snapshot = new ArrayList<>(hourValues);
         } catch (RuntimeException e) {
             return 0;
         }
         snapshot.removeIf(v -> v == null);
-        // Per-minute volatility scaled to one hour (√60), then to a spread premium.
+
         double hourly = EconomyMath.logReturnVolatility(snapshot) * Math.sqrt(60);
         return EconomyMath.clamp(hourly * factor, 0, max);
     }
 
-    /** Stock change pulling a crafted item back inside its no-arbitrage band. */
     private double recipePull(EconomySettings s, String productId, Price product) {
         if (!s.recipesEnabled) return 0;
         EconomySettings.Recipe recipe = s.recipes.get(productId);

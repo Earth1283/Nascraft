@@ -15,13 +15,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
-/**
- * Server-sent events. One scheduler builds each frame once; every client's
- * (virtual) handler thread just copies bytes from its own small queue. Slow
- * clients whose queue fills up are disconnected rather than buffered.
- */
 public final class LiveHub {
-
     private static final byte[] HEARTBEAT = ": ping\n\n".getBytes(StandardCharsets.UTF_8);
 
     private final Set<BlockingQueue<byte[]>> clients = ConcurrentHashMap.newKeySet();
@@ -73,12 +67,11 @@ public final class LiveHub {
         for (BlockingQueue<byte[]> q : clients) {
             if (!q.offer(frame)) {
                 q.clear();
-                q.offer(new byte[0]); // poison: disconnect the slow client
+                q.offer(new byte[0]);
             }
         }
     }
 
-    /** Blocks the (virtual) request thread for the life of the connection. */
     public void serve(HttpExchange ex, byte[] initial) throws IOException {
         if (clients.size() >= maxClients) {
             ex.sendResponseHeaders(503, -1);
@@ -105,7 +98,6 @@ public final class LiveHub {
                 out.flush();
             }
         } catch (IOException | InterruptedException ignored) {
-            // client went away
         } finally {
             clients.remove(queue);
             ex.close();
