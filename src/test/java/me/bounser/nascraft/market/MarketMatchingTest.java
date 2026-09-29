@@ -95,9 +95,22 @@ class MarketMatchingTest extends MarketTestFixture {
         void sameMaterial_noIgnoredKeys_isSimilarTrue_returnsTrue() {
             ItemStack is1 = mockItem(Material.DIAMOND);
             ItemStack is2 = mockItem(Material.DIAMOND);
-            when(is1.clone().isSimilar(is2.clone())).thenReturn(true);
+            when(is1.isSimilar(is2)).thenReturn(true);
 
             assertTrue(marketManager.isSimilarEnough(is1, is2));
+        }
+
+        @Test
+        @DisplayName("no ignored keys compares directly without cloning")
+        void noIgnoredKeys_doesNotClone() {
+            ItemStack is1 = mockItem(Material.DIAMOND);
+            ItemStack is2 = mockItem(Material.DIAMOND);
+            when(is1.isSimilar(is2)).thenReturn(true);
+
+            marketManager.isSimilarEnough(is1, is2);
+
+            verify(is1, never()).clone();
+            verify(is2, never()).clone();
         }
 
         @Test
@@ -105,7 +118,7 @@ class MarketMatchingTest extends MarketTestFixture {
         void sameMaterial_noIgnoredKeys_isSimilarFalse_returnsFalse() {
             ItemStack is1 = mockItem(Material.DIAMOND);
             ItemStack is2 = mockItem(Material.DIAMOND);
-            when(is1.clone().isSimilar(is2.clone())).thenReturn(false);
+            when(is1.isSimilar(is2)).thenReturn(false);
 
             assertFalse(marketManager.isSimilarEnough(is1, is2));
         }
@@ -179,10 +192,10 @@ class MarketMatchingTest extends MarketTestFixture {
         void noMatch_returnsNull() throws Exception {
             ItemStack template = mockItem(Material.DIAMOND);
             Item item = mock(Item.class);
-            when(item.getItemStack()).thenReturn(template);
+            when(item.peekItemStack()).thenReturn(template);
 
             ItemStack playerItem = mockItem(Material.DIAMOND);
-            when(playerItem.clone().isSimilar(template.clone())).thenReturn(false);
+            when(playerItem.isSimilar(template)).thenReturn(false);
 
             addToMarket(item);
             assertNull(marketManager.getItem(playerItem));
@@ -193,10 +206,10 @@ class MarketMatchingTest extends MarketTestFixture {
         void match_returnsCorrectItem() throws Exception {
             ItemStack template = mockItem(Material.DIAMOND);
             Item item = mock(Item.class);
-            when(item.getItemStack()).thenReturn(template);
+            when(item.peekItemStack()).thenReturn(template);
 
             ItemStack playerItem = mockItem(Material.DIAMOND);
-            when(playerItem.clone().isSimilar(template.clone())).thenReturn(true);
+            when(playerItem.isSimilar(template)).thenReturn(true);
 
             addToMarket(item);
             assertSame(item, marketManager.getItem(playerItem));
@@ -209,12 +222,12 @@ class MarketMatchingTest extends MarketTestFixture {
             ItemStack template2 = mockItem(Material.DIAMOND);
             Item item1 = mock(Item.class);
             Item item2 = mock(Item.class);
-            when(item1.getItemStack()).thenReturn(template1);
-            when(item2.getItemStack()).thenReturn(template2);
+            when(item1.peekItemStack()).thenReturn(template1);
+            when(item2.peekItemStack()).thenReturn(template2);
 
             ItemStack playerItem = mockItem(Material.DIAMOND);
-            when(playerItem.clone().isSimilar(template1.clone())).thenReturn(false);
-            when(playerItem.clone().isSimilar(template2.clone())).thenReturn(true);
+            when(playerItem.isSimilar(template1)).thenReturn(false);
+            when(playerItem.isSimilar(template2)).thenReturn(true);
 
             addToMarket(item1);
             addToMarket(item2);
@@ -227,12 +240,43 @@ class MarketMatchingTest extends MarketTestFixture {
         void differentMaterial_returnsNull() throws Exception {
             ItemStack template = mockItem(Material.DIAMOND);
             Item item = mock(Item.class);
-            when(item.getItemStack()).thenReturn(template);
+            when(item.peekItemStack()).thenReturn(template);
 
             ItemStack playerItem = mockItem(Material.STONE);
 
             addToMarket(item);
             assertNull(marketManager.getItem(playerItem));
+        }
+
+        @Test
+        @DisplayName("lookup index is rebuilt after the item list changes")
+        void indexRebuiltAfterAdd() throws Exception {
+            ItemStack template = mockItem(Material.DIAMOND);
+            Item item = mock(Item.class);
+            when(item.peekItemStack()).thenReturn(template);
+
+            ItemStack playerItem = mockItem(Material.DIAMOND);
+            when(playerItem.isSimilar(template)).thenReturn(true);
+
+            assertNull(marketManager.getItem(playerItem));
+            addToMarket(item);
+            assertSame(item, marketManager.getItem(playerItem));
+        }
+
+        @Test
+        @DisplayName("isAValidParentItem ignores child items")
+        void parentOnly_skipsChildren() throws Exception {
+            ItemStack template = mockItem(Material.DIAMOND);
+            Item child = mock(Item.class);
+            when(child.peekItemStack()).thenReturn(template);
+            when(child.isParent()).thenReturn(false);
+
+            ItemStack playerItem = mockItem(Material.DIAMOND);
+            lenient().when(playerItem.isSimilar(template)).thenReturn(true);
+
+            addToMarket(child);
+            assertTrue(marketManager.isAValidItem(playerItem));
+            assertFalse(marketManager.isAValidParentItem(playerItem));
         }
     }
 }

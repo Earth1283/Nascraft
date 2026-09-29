@@ -13,6 +13,7 @@ import me.bounser.nascraft.api.events.BuyItemEvent;
 import me.bounser.nascraft.api.events.SellItemEvent;
 import me.bounser.nascraft.database.commands.resources.Trade;
 import me.bounser.nascraft.discord.DiscordLog;
+import me.bounser.nascraft.economy.EconomyEngine;
 import me.bounser.nascraft.formatter.Formatter;
 import me.bounser.nascraft.formatter.RoundUtils;
 import me.bounser.nascraft.managers.InventoryManager;
@@ -215,13 +216,15 @@ public class Item {
                 parent.updateInternalValues(amount,
                         amount*price.getValue(),
                         -amount*multiplier,
-                        price.getValue()*(1-price.getBuyTaxMultiplier())*amount*multiplier);
+                        price.getValue()*(price.getBuyTaxMultiplier()-1)*amount*multiplier);
             else
                 updateInternalValues(amount,
                         amount*price.getValue(),
                         -amount*multiplier,
-                        price.getValue()*(1-price.getBuyTaxMultiplier())*amount*multiplier);
+                        price.getValue()*(price.getBuyTaxMultiplier()-1)*amount*multiplier);
         }
+
+        EconomyEngine.recordTrade(this, true, worth, limitReached ? 0 : -amount*multiplier);
 
         Trade trade = new Trade(this, LocalDateTime.now(), worth, amount, true, false, uuid);
 
@@ -262,13 +265,15 @@ public class Item {
                 parent.updateInternalValues(amount,
                         amount*price.getValue(),
                         -amount*multiplier,
-                        price.getValue()*(1-price.getBuyTaxMultiplier())*amount*multiplier);
+                        price.getValue()*(price.getBuyTaxMultiplier()-1)*amount*multiplier);
             else
                 updateInternalValues(amount,
                         amount*price.getValue(),
                         -amount*multiplier,
-                        price.getValue()*(1-price.getBuyTaxMultiplier())*amount*multiplier);
+                        price.getValue()*(price.getBuyTaxMultiplier()-1)*amount*multiplier);
         }
+
+        EconomyEngine.recordTrade(this, true, worth, limitReached ? 0 : -amount*multiplier);
 
         Trade trade = new Trade(this, LocalDateTime.now(), worth, amount, true, false, uuid);
 
@@ -335,12 +340,12 @@ public class Item {
                 parent.updateInternalValues(amount,
                         amount*price.getValue(),
                         amount*multiplier,
-                        price.getValue()*(1-price.getBuyTaxMultiplier())*amount*multiplier);
+                        price.getValue()*(1-price.getSellTaxMultiplier())*amount*multiplier);
             else
                 updateInternalValues(amount,
                         amount*price.getValue(),
                         amount*multiplier,
-                        price.getValue()*(1-price.getBuyTaxMultiplier())*amount*multiplier);
+                        price.getValue()*(1-price.getSellTaxMultiplier())*amount*multiplier);
         }
 
         MoneyManager.getInstance().deposit(offlinePlayer, currency, worth, price.getSellTaxMultiplier());
@@ -348,6 +353,8 @@ public class Item {
         worth = RoundUtils.round(worth);
 
         if (player != null && feedback) Lang.get().message(player, Message.SELL_MESSAGE, Formatter.format(currency, worth, Style.ROUND_BASIC), String.valueOf(amount), taggedAlias);
+
+        EconomyEngine.recordTrade(this, false, worth, limitReached ? 0 : amount*multiplier);
 
         Trade trade = new Trade(this, LocalDateTime.now(), worth, amount, false, false, uuid);
 
@@ -392,15 +399,17 @@ public class Item {
                 parent.updateInternalValues(amount,
                         amount*price.getValue(),
                         amount*multiplier,
-                        price.getValue()*(1-price.getBuyTaxMultiplier())*amount*multiplier);
+                        price.getValue()*(1-price.getSellTaxMultiplier())*amount*multiplier);
             else
                 updateInternalValues(amount,
                         amount*price.getValue(),
                         amount*multiplier,
-                        price.getValue()*(1-price.getBuyTaxMultiplier())*amount*multiplier);
+                        price.getValue()*(1-price.getSellTaxMultiplier())*amount*multiplier);
         }
 
         worth = RoundUtils.round(worth);
+
+        EconomyEngine.recordTrade(this, false, worth, limitReached ? 0 : amount*multiplier);
 
         Trade trade = new Trade(this, LocalDateTime.now(), worth, amount, false, false, uuid);
 
@@ -415,17 +424,41 @@ public class Item {
         return worth;
     }
 
+    public void applyExternalTrade(int amount, boolean buy, double worth, UUID uuid, boolean limitReached) {
+        float stockChange = buy ? -amount * multiplier : amount * multiplier;
+        if (!limitReached) {
+            double tax = buy
+                    ? price.getValue() * (price.getBuyTaxMultiplier() - 1) * amount * multiplier
+                    : price.getValue() * (1 - price.getSellTaxMultiplier()) * amount * multiplier;
+            Item target = parent != null ? parent : this;
+            target.updateInternalValues(amount, amount * price.getValue(), stockChange, tax);
+        }
+
+        EconomyEngine.recordTrade(this, buy, worth, limitReached ? 0 : stockChange);
+
+        Trade trade = new Trade(this, LocalDateTime.now(), worth, amount, buy, false, uuid);
+        DatabaseManager.get().getDatabase().saveTrade(trade);
+        if (Config.getInstance().getDiscordEnabled() && Config.getInstance().getLogChannelEnabled())
+            DiscordLog.getInstance().sendTradeLog(trade);
+        MarketManager.getInstance().addOperation();
+
+        Bukkit.getPluginManager().callEvent(new TransactionCompletedEvent(Bukkit.getPlayer(uuid), this, amount,
+                buy ? Action.BUY : Action.SELL, worth));
+    }
+
     public List<Double> getValuesPastHour() {
         return price.getValuesPastHour();
     }
 
     public void ghostBuyItem(int amount) {
-        updateInternalValues(-amount, amount, -amount,price.getValue()*price.getBuyTaxMultiplier());
+        EconomyEngine.recordTrade(this, true, amount*price.getValue()*price.getBuyTaxMultiplier(), -amount);
+        updateInternalValues(amount, amount*price.getValue(), -amount, price.getValue()*(price.getBuyTaxMultiplier()-1)*amount);
         MarketManager.getInstance().addOperation();
     }
 
     public void ghostSellItem(int amount) {
-        updateInternalValues(amount, amount, amount, price.getValue()*price.getSellTaxMultiplier());
+        EconomyEngine.recordTrade(this, false, amount*price.getValue()*price.getSellTaxMultiplier(), amount);
+        updateInternalValues(amount, amount*price.getValue(), amount, price.getValue()*(1-price.getSellTaxMultiplier())*amount);
         MarketManager.getInstance().addOperation();
     }
 
@@ -515,13 +548,18 @@ public class Item {
 
     public ItemStack getItemStack() { return itemStack.clone(); }
 
+    public ItemStack peekItemStack() { return itemStack; }
+
     public ItemStack getItemStack(int quantity) {
         ItemStack clonedItemStack = itemStack.clone();
         clonedItemStack.setAmount(quantity);
         return clonedItemStack;
     }
 
-    public void setItemStack(ItemStack itemStack) { this.itemStack = itemStack; }
+    public void setItemStack(ItemStack itemStack) {
+        this.itemStack = itemStack;
+        MarketManager.getInstance().invalidateLookups();
+    }
 
     public BufferedImage getIcon() { return icon; }
 

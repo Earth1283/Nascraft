@@ -173,6 +173,15 @@ commands:
   sellhand:
     enabled: true
     alias: 'nsellhand'
+  # Economy overview (/economy). Admin subcommands need nascraft.economy.admin.
+  # The engine itself is configured in economy.yml.
+  economy:
+    enabled: true
+    alias: 'eco'
+  # Gives players a one-time code to sign in to the web dashboard.
+  # The command name itself is set by website.login-command.
+  webcode:
+    enabled: true
   sell-menu:
     enabled: true
     alias: 'sell'
@@ -261,27 +270,87 @@ limit-orders:
       fee: 0.06
       min-fee: 6
 
-# Self-hosted website.
+# ═══════════════════════════════════════════════════════════════════════════
+#  WEB DASHBOARD
+# ═══════════════════════════════════════════════════════════════════════════
+# A self-hosted website served straight from the plugin: live prices, charts,
+# the economy dashboard, analytics, leaderboards and (optionally) trading from
+# the player's portfolio. No extra software needed.
+#
+# Players sign in by running the login command in game (default /webcode),
+# which gives them a one-time code. No passwords are stored.
 website:
-  # Turn the website on or off.
+  # Turn the website on or off. Default: false.
   enabled: false
-  # Port the website will be served on.
-  # Access it at http://<your-server-ip>:<port>
-  # Make sure the port is open/forwarded and not already used by another service.
-  port: 8080
 
-  # Browser title + header wordmark.
+  # Network interface to listen on. 0.0.0.0 = all interfaces (public).
+  # Use 127.0.0.1 when running behind a reverse proxy on the same machine.
+  bind-address: "0.0.0.0"
+  # Port the website is served on. Make sure it's open/forwarded and not used
+  # by another service. Access it at http://<your-server-ip>:<port>
+  port: 8080
+  # Public address players should open, shown in the /webcode message.
+  # Leave empty to show http://<server-ip>:<port>.
+  # Example: "https://market.myserver.net"
+  public-url: ""
+  # Set to true if a reverse proxy (nginx, Caddy, Cloudflare...) sits in front.
+  # Client IPs are then read from X-Forwarded-For, and HTTPS from
+  # X-Forwarded-Proto. Leave false when exposed directly, or players could
+  # spoof their IP. Default: false.
+  behind-proxy: false
+
+  # ─── Look & feel ─────────────────────────────────────────────────────────
+  # Browser title and header wordmark.
   title: "Nascraft Market"
   # Accent colour (hex). Restyles the whole web UI, both Regular and Pro modes.
   accent: "#6E56CF"
   # Default experience when a user first arrives: regular | pro
+  #   regular → cards, big charts, plain-language labels.
+  #   pro     → dense sortable tables, more numbers, keyboard shortcuts.
   default-mode: "regular"
   # If true, users cannot switch between Regular and Pro modes.
   lock-mode: false
   # Default colour theme: system | light | dark
   default-theme: "system"
+  # Language used when the browser's language isn't available.
+  # Bundled: en, es, zh_CN, de, fr, pt_BR, ru
+  default-language: "en"
+  # Languages offered in the language picker. Empty = all bundled ones.
+  # To add your own, turn on custom-assets, copy web/locales/en.json to
+  # plugins/Nascraft/web/locales/<code>.json (e.g. pl.json), translate it and
+  # list the code here. Codes without a locale file are left out.
+  languages: []
+  # Serve files from plugins/Nascraft/web/ before the bundled ones, so you can
+  # restyle or translate the site without rebuilding the plugin. Default: false.
+  custom-assets: false
+
+  # ─── Pages ───────────────────────────────────────────────────────────────
+  # Hide whole sections of the site.
+  pages:
+    market: true
+    economy: true
+    analytics: true
+    leaderboard: true
+    # Live feed of recent trades on the market page.
+    trades-feed: true
+
+  # ─── Privacy ─────────────────────────────────────────────────────────────
+  privacy:
+    # Show player names on leaderboards, trader rankings and the trades feed.
+    # When false, players appear as anonymous "Trader #1a2b". Default: true.
+    show-player-names: true
+    # Show wealth distribution (inequality charts) on the analytics page.
+    show-wealth-distribution: true
+
+  # ─── Sign-in ─────────────────────────────────────────────────────────────
   # In-game command a player runs to get a one-time web login code.
+  # Toggle it with commands.webcode.enabled.
   login-command: "webcode"
+  login-code:
+    # Characters in each code. Min 6. Default: 8.
+    length: 8
+    # Minutes a code stays valid. Default: 5.
+    ttl-minutes: 5
   # Session security.
   session:
     # Bind each login to the browser/device it was created on. Recommended.
@@ -289,6 +358,45 @@ website:
     # Also bind a session to the client IP. More secure, but logs users out when
     # their IP changes (mobile networks, dynamic ISPs).
     bind-ip: false
+    # Days a login lasts before the player must get a new code. Default: 14.
+    lifetime-days: 14
+    # Log out after this many minutes without activity. 0 = never. Default: 0.
+    idle-timeout-minutes: 0
+    # Most simultaneous logins per player; the oldest is dropped. Default: 5.
+    max-per-player: 5
+    # Send cookies only over HTTPS. Turn on when serving through HTTPS.
+    # (Automatic when behind-proxy is true and the proxy reports HTTPS.)
+    secure-cookies: false
+
+  # ─── Trading from the website ────────────────────────────────────────────
+  # Buys go into the player's portfolio and sells come out of it, so trading
+  # works even while the player is offline. Prices and taxes are the same as
+  # in game.
+  trading:
+    enabled: true
+    # Largest quantity in one order. Default: 2304 (36 stacks).
+    max-amount: 2304
+    # Only allow web trading while the player is online in game. Default: false.
+    require-online: false
+
+  # ─── Performance & limits ────────────────────────────────────────────────
+  performance:
+    # Seconds between live price pushes to open pages. Min 1. Default: 2.
+    live-interval-seconds: 2
+    # Most open live connections at once (each open tab is one). Default: 200.
+    max-live-clients: 200
+    # How long (seconds) the market overview is cached between rebuilds.
+    # Every visitor shares one copy, so this bounds the plugin's work.
+    # Default: 2.
+    market-cache-seconds: 2
+    # Cache for heavier pages (charts history, analytics, leaderboard).
+    # Default: 60.
+    heavy-cache-seconds: 60
+  rate-limit:
+    # Requests per minute allowed from one IP address. Default: 600.
+    requests-per-minute: 600
+    # Login attempts per minute from one IP address. Default: 10.
+    logins-per-minute: 10
 
 # Use with caution.
 discord-bot:

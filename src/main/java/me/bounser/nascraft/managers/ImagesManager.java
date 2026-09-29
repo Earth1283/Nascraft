@@ -20,6 +20,12 @@ public class ImagesManager {
 
     public static ImagesManager getInstance() { return instance == null ? instance = new ImagesManager() : instance; }
 
+    private static final BufferedImage PLACEHOLDER = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
+
+    public static BufferedImage placeholder() { return PLACEHOLDER; }
+
+    public static boolean isPlaceholder(BufferedImage image) { return image == null || image == PLACEHOLDER; }
+
 
     public BufferedImage getImage(String identifier) {
 

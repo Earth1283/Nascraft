@@ -1,0 +1,341 @@
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║                        NASCRAFT — ECONOMY ENGINE                         ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+#
+# The economy engine turns the market into a self-regulating economy:
+#
+#   • MEASURES it (inflation, GDP, money supply, velocity, inequality...)
+#   • STEERS it with a central bank (interest rate + payout liquidity)
+#   • FUNDS a treasury from market taxes that can redistribute (UBI, wealth tax)
+#   • PULLS prices back toward equilibrium (natural production & consumption)
+#   • LINKS related items (substitutes, crafting recipes)
+#   • SHAKES it with random supply/demand events (business cycle)
+#
+# ─── Conventions used in this file ───────────────────────────────────────────
+#   Rates are FRACTIONS, not percentages: 0.005 means 0.5%.
+#   "Per day" always means per real-world 24 hours, not Minecraft days.
+#   Money amounts are in your default currency (see config.yml → currencies).
+#   Every value shows its default; delete a key to fall back to it.
+#   After editing, run /economy reload (tick intervals need a restart).
+#
+# ─── Glossary ────────────────────────────────────────────────────────────────
+#   CPI            Consumer Price Index. 100 = every item at its initial price.
+#   Inflation      How fast CPI grows, per day, smoothed.
+#   GDP            Money value of all market trades over the last 24 hours.
+#   Real GDP       GDP divided by CPI/100: trade volume in "initial prices".
+#   Trend output   Slow average of real GDP; what the economy "normally" does.
+#   Output gap     (Real GDP − trend) / trend. Positive = boom, negative = slump.
+#   Money supply   Sum of tracked player balances (non-op players seen online).
+#   Velocity       GDP / money supply: how often each coin changes hands a day.
+#   Price level    Multiplier on every item's base price, driven by money per
+#                  player (more money chasing the same goods → higher prices).
+#   Liquidity      Multiplier on sell payouts. Selling to the market CREATES
+#                  money, so paying a bit less (liquidity < 1) fights inflation.
+#   Tax scale      Multiplier on the market's buy/sell taxes (fiscal policy).
+#   Gini           Wealth inequality: 0 = everyone equal, 1 = one player owns all.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Master switch. When false the market behaves exactly like vanilla Nascraft.
+enabled: true
+
+# Seconds between macro ticks (measure → decide policy → store a snapshot).
+# Lower = more responsive and more data points; higher = cheaper. Min 30.
+# Default: 300 (5 minutes). Requires a restart to change.
+tick-seconds: 300
+
+# Seconds between item-level ticks (mean reversion, spillovers, shocks, spreads).
+# Min 10. Default: 60. Requires a restart to change.
+micro-tick-seconds: 60
+
+# Days of economic snapshots to keep in the database. Older ones are purged.
+# At the default tick, one day ≈ 288 small rows. Default: 180.
+snapshot-retention-days: 180
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  INFLATION MEASUREMENT
+# ═══════════════════════════════════════════════════════════════════════════
+inflation:
+  # Compare today's CPI with the CPI this many hours ago. Default: 24.
+  reference-window-hours: 24
+  # Half-life (hours) of the smoothing applied to the raw reading, so a single
+  # spike doesn't whipsaw policy. Higher = calmer, slower. Default: 12.
+  smoothing-half-life-hours: 12
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  CENTRAL BANK — monetary policy
+# ═══════════════════════════════════════════════════════════════════════════
+# Sets the interest rate on portfolio loans and a "liquidity" multiplier on
+# sell payouts. With the default Taylor rule it tightens when inflation runs
+# above target or the economy overheats, and eases in a slump:
+#
+#     rate = neutral + inflation + inflation-weight × (inflation − target)
+#                                + output-gap-weight × output gap
+central-bank:
+  enabled: true
+
+  # taylor → rate follows the rule above.
+  # fixed  → rate is always `fixed-rate` (liquidity lever still works).
+  mode: taylor
+  fixed-rate: 0.005
+
+  # When true, loans charge the central bank rate instead of
+  # config.yml → portfolio.loans.interest-rate.percentage. Default: true.
+  controls-loan-rate: true
+
+  # Inflation the bank aims for, per day. 0.001 = 0.1%/day (≈ 44%/year —
+  # Minecraft economies move fast). Default: 0.001.
+  inflation-target: 0.001
+  # Real interest rate when inflation is on target and the gap is zero,
+  # per day. Default: 0.004 (0.4%/day).
+  neutral-rate: 0.004
+  # How hard the rate reacts to inflation missing its target. Taylor's
+  # original value is 0.5. Default: 0.5.
+  inflation-weight: 0.5
+  # How hard the rate reacts to the output gap. The gap is a fraction
+  # (−0.2 = 20% below trend), so 0.005 moves the rate 0.1%/day for a 20% gap.
+  # Default: 0.005.
+  output-gap-weight: 0.005
+  # 0..1. Share of the previous rate kept each tick (interest-rate smoothing).
+  # 0 = jump straight to the target, 0.95 = glacial. Default: 0.8.
+  smoothing: 0.8
+  # Hard floor and ceiling for the rate, per day. Defaults: 0.0005 / 0.03.
+  min-rate: 0.0005
+  max-rate: 0.03
+
+  # Liquidity lever: multiplies every sell payout.
+  #   liquidity = 1 − sensitivity × (inflation − target), clamped to [min, max]
+  # Inflation above target → payouts shrink → less new money is created.
+  liquidity:
+    enabled: true
+    # Default: 10 (0.1%/day of excess inflation trims payouts by 1%).
+    sensitivity: 10
+    # Defaults: 0.95 / 1.02. Keep max close to 1: a round-trip guard (see
+    # micro.min-round-trip-spread) caps it anyway so buy→sell never profits.
+    min: 0.95
+    max: 1.02
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  PRICE LEVEL — the quantity theory of money
+# ═══════════════════════════════════════════════════════════════════════════
+# Every item's base price is multiplied by a price level that follows money
+# per player:   level = (money per player now / money per player at start) ^ money-elasticity
+# If other plugins (jobs, mob drops, vote rewards) print lots of money, market
+# prices rise with it instead of letting that money buy out the market.
+price-level:
+  enabled: true
+  # 0 = prices ignore money entirely, 1 = fully proportional. Default: 0.5.
+  money-elasticity: 0.5
+  # Largest move allowed per day, as a fraction. Default: 0.02 (2%/day).
+  max-change-per-day: 0.02
+  # Bounds for the level. Defaults: 0.25 / 4.0.
+  min: 0.25
+  max: 4.0
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  TREASURY — fiscal policy
+# ═══════════════════════════════════════════════════════════════════════════
+# Market taxes and loan interest are deposited into a server treasury instead
+# of vanishing. The treasury can hand money back (UBI) and charge a wealth tax.
+# Balances are shared safely across servers on one MySQL database.
+treasury:
+  enabled: true
+
+  # Money the treasury never spends below (a rainy-day fund). Default: 10000.
+  reserve: 10000
+
+  # Automatic stabilizers: scale trading taxes with the business cycle.
+  #   tax scale = 1 + sensitivity × output gap, clamped to [min, max]
+  # Slump → cheaper trading to revive activity; boom → dearer to cool it.
+  automatic-stabilizers:
+    enabled: true
+    # Default: 1.0 (a −20% gap cuts taxes by 20%).
+    sensitivity: 1.0
+    min-tax-scale: 0.5
+    max-tax-scale: 1.5
+    # 0..1 share of the previous scale kept each tick. Default: 0.8.
+    smoothing: 0.8
+
+  # Universal basic income ("citizen dividend") paid to online players.
+  #   per player = min(max-per-player, (treasury − reserve) × share-of-surplus
+  #                                    × (1 + recession-boost if in recession) / online)
+  ubi:
+    enabled: false
+    # Minutes between payouts. Min 5. Default: 60. Requires a restart.
+    interval-minutes: 60
+    # 0..1 share of the surplus (treasury above reserve) paid out each time.
+    # Default: 0.1.
+    share-of-surplus: 0.1
+    # Cap per player per payout. Default: 250.
+    max-per-player: 250
+    # Extra share paid during a recession (1.0 = double). Default: 1.0.
+    recession-boost: 1.0
+    # Only players with this permission are paid. Empty = everyone online.
+    # Default: nascraft.economy.ubi (granted to everyone by default).
+    permission: "nascraft.economy.ubi"
+    # Skip the payout when fewer players than this are online. Default: 1.
+    min-online: 1
+
+  # Progressive daily wealth tax on player balances (charged once a day, even
+  # to offline players, through Vault). Each rate applies only to the part of
+  # the balance inside its bracket — like income tax brackets.
+  wealth-tax:
+    enabled: false
+    brackets:
+      - above: 100000       # 0.1%/day on the part between 100k and 1M
+        daily-rate: 0.001
+      - above: 1000000      # 0.3%/day on everything above 1M
+        daily-rate: 0.003
+    # Players processed per server tick, to avoid lag spikes. Default: 25.
+    batch-size: 25
+    # Cap per player per day. -1 = no cap. Default: -1.
+    max-per-player: -1
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  MICROECONOMICS — item-level dynamics
+# ═══════════════════════════════════════════════════════════════════════════
+micro:
+  # Natural production and consumption: every item's stock decays back
+  # toward zero (its initial price) with this half-life. Without it, a price
+  # pushed by trading stays there forever.
+  mean-reversion:
+    enabled: true
+    # Hours for an imbalance to halve. 168 = one week. Default: 168.
+    half-life-hours: 168
+
+  # Spillovers: trading one item nudges related items' prices.
+  # A value of 0.05 means: if A's price moves 10%, B's moves 0.5%.
+  # Positive = move together (substitutes), negative = move opposite.
+  spillovers:
+    enabled: true
+    # Applied between every pair of items in the same category. Default: 0.05.
+    same-category: 0.05
+    # Explicit links override the category default for that pair.
+    links:
+      iron_ingot:
+        gold_ingot: 0.1
+        copper_ingot: 0.1
+      coal:
+        redstone: 0.05
+      cod:
+        salmon: 0.3
+      salmon:
+        cod: 0.3
+      wheat:
+        potato: 0.15
+        carrot: 0.15
+
+  # Recipe arbitrage: a crafted item can't stay far above the cost of its
+  # ingredients (players would craft and sell) nor far below (nobody would
+  # craft it). Only works when every ingredient is also a market item.
+  recipes:
+    enabled: true
+    # Product may sit this far above ingredient cost. Default: 0.15 (+15%).
+    upper-band: 0.15
+    # ...and this far below. Default: 0.40 (−40%).
+    lower-band: 0.40
+    # 0..1 share of the gap closed each micro tick. Default: 0.05.
+    convergence: 0.05
+    list:
+      # <product identifier>:
+      #   output: <items produced by one craft>
+      #   ingredients: { <identifier>: <amount>, ... }
+      # Example (uncomment if iron_block is in your items.yml):
+      # iron_block:
+      #   output: 1
+      #   ingredients:
+      #     iron_ingot: 9
+
+  # Volatile items get a wider buy/sell spread (like real market makers).
+  #   extra spread = hourly volatility × volatility-factor, capped at max-extra
+  dynamic-spread:
+    enabled: true
+    # Default: 2.0.
+    volatility-factor: 2.0
+    # Default: 0.05 (at most +5 percentage points of spread).
+    max-extra: 0.05
+
+  # Safety net: whatever the central bank and treasury do to taxes, buying and
+  # immediately selling back always loses at least this share. Default: 0.005.
+  min-round-trip-spread: 0.005
+
+  # Items the micro dynamics never touch (identifiers from items.yml).
+  excluded-items: []
+
+  # Tune any of these per category (identifier from categories.yml).
+  # Keys (all optional): mean-reversion, mean-reversion-half-life-hours,
+  # spillover, shocks, dynamic-spread, spread-volatility-factor.
+  category-overrides: {}
+  #  minerals:
+  #    mean-reversion-half-life-hours: 336   # ores recover slower
+  #    spillover: 0.1
+  #  food:
+  #    dynamic-spread: false
+
+  # Same keys, per item. Item overrides beat category overrides.
+  item-overrides: {}
+  #  diamond:
+  #    shocks: false
+  #    mean-reversion: false
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  BUSINESS CYCLE & MARKET EVENTS
+# ═══════════════════════════════════════════════════════════════════════════
+# The cycle phase comes from the output gap and its direction:
+#   Expansion (above trend, rising)   Slowdown (above trend, falling)
+#   Contraction (below trend, falling) Recovery (below trend, rising)
+business-cycle:
+  # Half-life of the trend (potential output) average. Longer = the economy
+  # must stay weak/strong for longer before it counts as "normal". Default: 72.
+  trend-half-life-hours: 72
+  # Output gap at or below which the economy is "in recession" (boosts UBI).
+  # Default: -0.15 (15% below trend).
+  recession-gap: -0.15
+
+  # Random supply/demand shocks that push prices of a category (or the whole
+  # market) up or down over a few hours. Mean reversion pulls them back after.
+  shocks:
+    enabled: true
+    # Expected number of shocks per day. Default: 0.5 (about one every 2 days).
+    per-day: 0.5
+    # Size of the price push, as a fraction. Defaults: 0.05 / 0.20.
+    min-magnitude: 0.05
+    max-magnitude: 0.20
+    # How many hours the push is spread over. Defaults: 2 / 12.
+    min-hours: 2
+    max-hours: 12
+    # 0..1 chance a shock hits the whole market instead of one category.
+    # Default: 0.2.
+    market-wide-chance: 0.2
+    # Never run more than this many shocks at once. Default: 3.
+    max-concurrent: 3
+    # Relative likelihood of each kind (0 disables it).
+    weights:
+      shortage: 1   # category prices rise
+      glut: 1       # category prices fall
+      boom: 1       # market-wide rise
+      slump: 1      # market-wide fall
+    # Categories that are never picked for a shock.
+    excluded-categories: []
+    # Broadcast shocks to the server (messages in langs/*.yml). Default: true.
+    announce: true
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  ANALYTICS (used by /economy, placeholders and the web dashboard)
+# ═══════════════════════════════════════════════════════════════════════════
+analytics:
+  # Look-back window for trader rankings, item flows and activity heatmaps.
+  # Default: 7 days.
+  window-days: 7
+  # Portfolio worth older than this is ignored when measuring wealth.
+  # Default: 30.
+  gini-portfolio-lookback-days: 30
+  # Most points returned for a history chart (older data is thinned).
+  # Default: 500.
+  history-max-points: 500

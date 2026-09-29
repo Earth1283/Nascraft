@@ -104,7 +104,7 @@ public class Balances {
                 String sqlInsertSupply = "INSERT INTO money_supply (day, supply) VALUES (?, ?);";
                 try (PreparedStatement prepInsertSupply = connection.prepareStatement(sqlInsertSupply)) {
                     prepInsertSupply.setInt(1, today);
-                    prepInsertSupply.setDouble(2, balanceDifference);
+                    prepInsertSupply.setDouble(2, currentSupply + balanceDifference);
                     prepInsertSupply.executeUpdate();
                 }
             }
@@ -133,6 +133,5 @@ public class Balances {
 
         return supplyHistory;
     }
-
 
 }

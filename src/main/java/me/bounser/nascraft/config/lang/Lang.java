@@ -20,7 +20,6 @@ public class Lang {
 
     public static Lang get() { return instance == null ? instance = new Lang() : instance; }
 
-
     private Lang() {
 
         saveResourceIfNotExists("langs/en_US.yml");
@@ -34,6 +33,7 @@ public class Lang {
         }
 
         lang = YamlConfiguration.loadConfiguration(language);
+        applyBundledDefaults();
 
         this.miniMessage = MiniMessage.miniMessage();
         Formatter.setSeparator(Separator.valueOf(message(Message.SEPARATOR).toUpperCase()));
@@ -49,7 +49,20 @@ public class Lang {
         }
 
         lang = YamlConfiguration.loadConfiguration(language);
+        applyBundledDefaults();
         Formatter.setSeparator(Separator.valueOf(message(Message.SEPARATOR).toUpperCase()));
+    }
+
+    private void applyBundledDefaults() {
+        String selected = Config.getInstance().getSelectedLanguage();
+        InputStream in = Nascraft.getInstance().getResource("langs/" + selected + ".yml");
+        if (in == null) in = Nascraft.getInstance().getResource("langs/en_US.yml");
+        if (in == null) return;
+        try (Reader reader = new InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8)) {
+            lang.setDefaults(YamlConfiguration.loadConfiguration(reader));
+        } catch (IOException e) {
+            Nascraft.getInstance().getLogger().warning("Could not load bundled lang defaults: " + e.getMessage());
+        }
     }
 
     private void saveResourceIfNotExists(String resourcePath) {

@@ -1,5 +1,3 @@
-import java.net.URI
-
 plugins {
     java
     kotlin("jvm") version "2.1.21"
@@ -64,16 +62,6 @@ dependencies {
     testImplementation("io.papermc.paper:paper-api:1.21.3-R0.1-SNAPSHOT")
 }
 
-fun latestPaperMinecraftVersion(): String =
-    URI("https://api.papermc.io/v2/projects/paper")
-        .toURL()
-        .readText()
-        .substringAfter("\"versions\":[")
-        .substringBefore("]")
-        .split(",")
-        .last()
-        .trim('"')
-
 tasks {
     processResources {
         val props = mapOf("version" to project.version)
@@ -110,7 +98,7 @@ tasks {
     }
 
     runServer {
-        minecraftVersion(latestPaperMinecraftVersion())
+        minecraftVersion(providers.gradleProperty("mcVersion").getOrElse("1.21.8"))
         jvmArgs("-Dcom.mojang.eula.agree=true")
         downloadPlugins {
             github("milkbowl", "Vault", "1.7.3", "Vault.jar")

@@ -72,6 +72,10 @@ public class Config {
         MarketManager.getInstance().reload();
     }
 
+    public org.bukkit.configuration.ConfigurationSection getSection(String path) {
+        return config.getConfigurationSection(path);
+    }
+
     public FileConfiguration getItemsFileConfiguration() {
         return items;
     }
@@ -354,7 +358,6 @@ public class Config {
         return Material.getMaterial(config.getString("commands.sell-menu.sell-button.material").toUpperCase());
     }
 
-
     public boolean getCloseButtonEnabled() {
         return config.getBoolean("commands.sell-menu.close-button.enabled");
     }
@@ -366,7 +369,6 @@ public class Config {
     public Material getCloseButtonMaterial() {
         return Material.getMaterial(config.getString("commands.sell-menu.close-button.material").toUpperCase());
     }
-
 
     public boolean getSellWandsEnabled() {
         return config.getBoolean("sell-wands.enabled");
@@ -994,7 +996,6 @@ public class Config {
 
     public int getBuySellMenuItemSlot() { return inventorygui.getInt("buy-sell.item.slot"); }
 
-
     public boolean getAlertsBuySellEnabled() {
         return inventorygui.getInt("buy-sell.alerts.slot") != -1;
     }
@@ -1070,7 +1071,6 @@ public class Config {
     }
 
     //
-
 
     public Material getBuySellSellMaterial() {
         return Material.getMaterial(inventorygui.getString("buy-sell.sell-buttons.material").toUpperCase());

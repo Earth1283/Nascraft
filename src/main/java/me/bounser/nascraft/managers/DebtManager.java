@@ -1,5 +1,6 @@
 package me.bounser.nascraft.managers;
 
+import me.bounser.nascraft.economy.EconomyEngine;
 import me.bounser.nascraft.Nascraft;
 import me.bounser.nascraft.config.Config;
 import me.bounser.nascraft.config.lang.Lang;
@@ -76,13 +77,14 @@ public class DebtManager {
                     HashMap<UUID, Double> debtors = DatabaseManager.get().getDatabase().getUUIDAndDebt();
 
                     for (UUID debtorUUID : debtors.keySet()) {
-                        double interest = Math.max(debtors.get(debtorUUID) * Config.getInstance().getLoansDailyInterest(), Config.getInstance().getLoansMinimumInterest());
+                        double interest = Math.max(debtors.get(debtorUUID) * EconomyEngine.loanDailyRate(), Config.getInstance().getLoansMinimumInterest());
                         OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(debtorUUID);
                         Currency currency = CurrenciesManager.getInstance().getDefaultCurrency();
 
                         if (MoneyManager.getInstance().hasEnoughMoney(offlinePlayer, currency, interest)) {
                             MoneyManager.getInstance().simpleWithdraw(offlinePlayer, CurrenciesManager.getInstance().getDefaultCurrency(), interest);
                             DatabaseManager.get().getDatabase().addInterestPaid(debtorUUID, interest);
+                            EconomyEngine.recordInterest(interest);
 
                             Player player = Bukkit.getPlayer(debtorUUID);
 
@@ -110,7 +112,7 @@ public class DebtManager {
 
         if (!debtors.containsKey(uuid)) return 0;
 
-        return Math.max(debtors.get(uuid) * Config.getInstance().getLoansDailyInterest(), Config.getInstance().getLoansMinimumInterest());
+        return Math.max(debtors.get(uuid) * EconomyEngine.loanDailyRate(), Config.getInstance().getLoansMinimumInterest());
     }
 
     public LocalTime getNextPaymentTime() {
