@@ -7,36 +7,27 @@ import me.bounser.nascraft.managers.currencies.CurrenciesManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.UUID;
 
 public class PortfoliosManager {
 
 
-    private final HashMap<UUID, Portfolio> inventories = new HashMap<>();
+    // Read from the web dashboard's threads as well as the main thread.
+    private final ConcurrentHashMap<UUID, Portfolio> inventories = new ConcurrentHashMap<>();
 
     private static PortfoliosManager instance;
 
     public static PortfoliosManager getInstance() { return instance == null ? instance = new PortfoliosManager() : instance; }
 
     public Portfolio getPortfolio(UUID uuid) {
-
-        if (inventories.containsKey(uuid)) return inventories.get(uuid);
-
-        inventories.put(uuid, new Portfolio(uuid));
-
-        return inventories.get(uuid);
+        return inventories.computeIfAbsent(uuid, Portfolio::new);
     }
 
     public Portfolio getPortfolio(String userid) {
-
         UUID uuid = LinkManager.getInstance().getUUID(userid);
-
-        if (inventories.containsKey(uuid)) return inventories.get(uuid);
-
-        inventories.put(uuid, new Portfolio(uuid));
-
-        return inventories.get(uuid);
+        if (uuid == null) return null;
+        return getPortfolio(uuid);
     }
 
     public void savePortfoliosWorthOfOnlinePlayers() {
@@ -45,12 +36,13 @@ public class PortfoliosManager {
 
             if (player == null) continue;
 
-            double worth = getPortfolio(player.getUniqueId()).getValueOfDefaultCurrency() - DebtManager.getInstance().getDebtOfPlayer(player.getUniqueId());
+            double value = getPortfolio(player.getUniqueId()).getValueOfDefaultCurrency();
             double debt = DebtManager.getInstance().getDebtOfPlayer(player.getUniqueId());
 
-            if (worth == 0) continue;
+            if (value == 0 && debt == 0) continue;
 
-            DatabaseManager.get().getDatabase().saveOrUpdateWorthToday(player.getUniqueId(), worth - debt);
+            // Net worth: debt is subtracted once (it used to be subtracted twice).
+            DatabaseManager.get().getDatabase().saveOrUpdateWorthToday(player.getUniqueId(), value - debt);
         }
     }
 

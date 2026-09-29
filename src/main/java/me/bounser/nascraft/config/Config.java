@@ -72,6 +72,11 @@ public class Config {
         MarketManager.getInstance().reload();
     }
 
+    /** A raw section of config.yml (e.g. "website"), or null if absent. */
+    public org.bukkit.configuration.ConfigurationSection getSection(String path) {
+        return config.getConfigurationSection(path);
+    }
+
     public FileConfiguration getItemsFileConfiguration() {
         return items;
     }

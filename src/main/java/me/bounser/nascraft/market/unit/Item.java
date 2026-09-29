@@ -424,6 +424,33 @@ public class Item {
         return worth;
     }
 
+    /**
+     * Books a trade whose goods move through the portfolio rather than the
+     * player's inventory (web dashboard). Money must already have been moved.
+     * Updates stock, the economy ledger, the trade log and fires the usual event.
+     */
+    public void applyExternalTrade(int amount, boolean buy, double worth, UUID uuid, boolean limitReached) {
+        float stockChange = buy ? -amount * multiplier : amount * multiplier;
+        if (!limitReached) {
+            double tax = buy
+                    ? price.getValue() * (price.getBuyTaxMultiplier() - 1) * amount * multiplier
+                    : price.getValue() * (1 - price.getSellTaxMultiplier()) * amount * multiplier;
+            Item target = parent != null ? parent : this;
+            target.updateInternalValues(amount, amount * price.getValue(), stockChange, tax);
+        }
+
+        EconomyEngine.recordTrade(this, buy, worth, limitReached ? 0 : stockChange);
+
+        Trade trade = new Trade(this, LocalDateTime.now(), worth, amount, buy, false, uuid);
+        DatabaseManager.get().getDatabase().saveTrade(trade);
+        if (Config.getInstance().getDiscordEnabled() && Config.getInstance().getLogChannelEnabled())
+            DiscordLog.getInstance().sendTradeLog(trade);
+        MarketManager.getInstance().addOperation();
+
+        Bukkit.getPluginManager().callEvent(new TransactionCompletedEvent(Bukkit.getPlayer(uuid), this, amount,
+                buy ? Action.BUY : Action.SELL, worth));
+    }
+
     public List<Double> getValuesPastHour() {
         return price.getValuesPastHour();
     }

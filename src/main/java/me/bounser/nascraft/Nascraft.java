@@ -14,6 +14,8 @@ import me.bounser.nascraft.commands.discord.DiscordCommand;
 import me.bounser.nascraft.commands.portfolio.PortfolioCommand;
 import me.bounser.nascraft.commands.economy.EconomyCommand;
 import me.bounser.nascraft.economy.EconomyEngine;
+import me.bounser.nascraft.commands.web.WebCodeCommand;
+import me.bounser.nascraft.web.WebServer;
 import me.bounser.nascraft.crossserver.RedisManager;
 import me.bounser.nascraft.database.Database;
 import me.bounser.nascraft.database.BaseDatabase;
@@ -191,6 +193,10 @@ public class Nascraft extends JavaPlugin {
 
         if (config.isCommandEnabled("economy")) new EconomyCommand();
 
+        WebServer.start(this);
+        if (WebServer.get() != null && config.isCommandEnabled("webcode"))
+            new WebCodeCommand(WebServer.get().settings().loginCommand);
+
         if (config.isCommandEnabled("sell-menu")) {
             new SellInvCommand();
             Bukkit.getPluginManager().registerEvents(new SellInvListener(), this);
@@ -221,6 +227,9 @@ public class Nascraft extends JavaPlugin {
 
     @Override
     public void onDisable() {
+
+        WebServer web = WebServer.get();
+        if (web != null) web.stop();
 
         EconomyEngine engine = EconomyEngine.get();
         if (engine != null) engine.shutdown();
