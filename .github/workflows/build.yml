@@ -1,0 +1,68 @@
+name: Build
+
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build
+        run: sh ./gradlew build --no-daemon
+
+      - name: Locate JAR
+        id: jar
+        run: |
+          jar=$(ls build/libs/Nascraft-*.jar | grep -v -- '-plain' | head -n 1)
+          echo "path=$jar" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Nascraft
+          path: ${{ steps.jar.outputs.path }}
+
+      # Only the default branch updates the rolling pre-release, so
+      # feature branches never overwrite it with unmerged code.
+      - name: Update rolling pre-release
+        if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JAR: ${{ steps.jar.outputs.path }}
+        run: |
+          short=$(git rev-parse --short HEAD)
+          title="Development build (${short})"
+          notes="Automated build of ${GITHUB_SHA} from \`${GITHUB_REF_NAME}\`. This pre-release is updated on every push."
+
+          # Move the tag to the commit that was just built.
+          git tag -f "$RELEASE_TAG" "$GITHUB_SHA"
+          git push -f origin "refs/tags/$RELEASE_TAG"
+
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release edit "$RELEASE_TAG" --title "$title" --notes "$notes" --prerelease
+            # Drop old assets so a changed JAR name doesn't leave stale files behind.
+            for asset in $(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name'); do
+              gh release delete-asset "$RELEASE_TAG" "$asset" --yes
+            done
+            gh release upload "$RELEASE_TAG" "$JAR" --clobber
+          else
+            gh release create "$RELEASE_TAG" "$JAR" \
+              --title "$title" --notes "$notes" --prerelease --target "$GITHUB_SHA"
+          fi
